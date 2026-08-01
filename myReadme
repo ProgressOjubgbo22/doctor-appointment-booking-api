@@ -1,0 +1,4212 @@
+A doctor appointment system is a digital hospital receptionist.
+
+1. Patient Features
+Authentication
+•	Register 
+•	Login 
+•	Logout 
+•	Forgot password 
+•	Reset password 
+•	Email verification 
+•	Change password
+Profile Management
+•	Update profile 
+•	View profile
+•	Delete account
+•	Upload profile picture 
+•	Manage medical information 
+•	Add emergency contact 
+•	Manage addresses
+Doctor Search
+•	Search doctors 
+•	Filter by specialty 
+•	Filter by availability 
+•	View doctor profile 
+•	View doctor ratings and reviews
+•	View qualifications
+•	View available time slots
+Appointment Booking
+•	Book appointment 
+•	Select date and time 
+•	Cancel appointment 
+•	Reschedule appointment 
+•	View appointment history
+•	View upcoming appointments
+Medical Records
+•	View prescriptions 
+•	Download prescriptions 
+•	View diagnosis history 
+•	View laboratory reports 
+•	Upload previous reports
+Payments
+•	Pay consultation fee (online/cash)
+•	View payment history 
+•	Download invoices 
+•	Request refunds
+Notifications
+•	Appointment confirmation 
+•	Appointment reminders 
+•	Payment confirmation 
+•	Prescription ready 
+•	Appointment cancellation 
+•	Doctor schedule changes
+Reviews
+•	Rate doctor 
+•	Leave review 
+•	Edit review
+•	Delete review
+•	Save favorite doctor
+Patient Dashboard
+•	Upcoming Appointments
+•	Total Appointments 
+•	Completed Appointments 
+•	Pending Appointments
+•	Outstanding Balance
+
+2. Doctor Features
+Authentication
+•	invited by admin
+•	Login 
+•	Logout 
+•	Reset password
+•	Change password
+Profile
+•	Update profile 
+•	Upload profile photo 
+•	Add qualifications 
+•	Add specialization 
+•	Years of experience
+•	Set consultation fees 
+Availability
+•	Set working days 
+•	Set working hours
+•	Block unavailable dates 
+•	Add break times
+Appointment Management
+•	View appointments
+•	Filter by date/status
+•	Accept appointments 
+•	Reject appointments 
+•	Reschedule appointments 
+•	Cancel appointments 
+•	Mark patient as arrived 
+•	Mark appointment completed 
+•	Mark patient absent
+Patient Management
+•	View patient profile
+•	View patient medical history 
+•	View previous appointments
+Prescription Management
+•	Create prescriptions 
+•	Update prescriptions 
+•	Print prescriptions 
+•	Send prescriptions electronically
+Medical Records
+•	Add diagnosis 
+•	Add treatment plan 
+•	Upload reports 
+•	Request laboratory tests
+Notifications
+•	New appointment 
+•	Appointment cancellation 
+•	Payment received 
+•	Upcoming appointments
+•	Reschedule requests
+Reviews
+•	View patient reviews
+Earnings
+•	View earnings 
+•	Pending Payouts
+•	Payment History
+•	View completed payments 
+•	Download earnings reports
+Dashboard
+•	Today's Appointments 
+•	Upcoming Appointments 
+•	Completed Appointments 
+•	Total Patients
+•	Total Earnings
+•	This Month's Earnings
+3. Admin Features
+Authentication
+•	Login 
+•	Logout 
+•	Change password
+Dashboard
+•	Total patients 
+•	Total doctors 
+•	Total appointments 
+•	Today's appointments 
+•	Revenue 
+•	Pending approvals 
+•	Active Doctors
+•	Recent activities
+Patient Management
+•	View patients 
+•	Edit patient accounts 
+•	Suspend users 
+•	Deactivate patient accounts
+Doctor Management
+•	Add doctors 
+•	Approve doctor registrations 
+•	Suspend doctors 
+•	Verify licenses 
+•	Edit doctor information 
+•	Delete doctors
+Appointment Management
+•	View all appointments 
+•	Create appointment
+•	Cancel appointments 
+•	Reassign appointments 
+•	Reschedule appointment
+•	Monitor appointment status
+Specialty Management
+•	Add specialties 
+•	Edit specialties 
+•	Delete specialties
+Payment Management
+•	View all payments 
+•	Process refunds 
+•	Generate invoices 
+•	Verify payments
+•	View transactions
+Reports & Analytics
+•	Revenue reports 
+•	Appointment reports 
+•	Doctor performance 
+•	Patient statistics
+Reviews Management
+•	View reviews 
+•	Delete inappropriate reviews 
+•	Moderate ratings
+Notifications
+•	Send announcements 
+•	Email notifications
+Audit & Security
+•	View audit logs
+
+
+Appointment Status
+•	Pending 
+•	Confirmed 
+•	Checked In 
+•	In Progress 
+•	Completed 
+•	Cancelled 
+•	No Show 
+•	Rescheduled
+Payment Status
+•	Pending 
+•	Paid 
+•	Failed 
+•	Refunded 
+•	Cancelled
+Payment Methods
+•	Card 
+•	Bank Transfer 
+•	Mobile Wallet 
+•	Cash (for in-person visits)
+Doctor Verification Status
+•	Pending 
+•	Verified 
+•	Rejected 
+•	Suspended
+User Roles
+•	Patient 
+•	Doctor 
+•	Admin
+
+Packages
+•  ✅ express 
+•  ✅ mongoose 
+•  ✅ dotenv 
+•  ✅ cors 
+•  ✅ bcrypt 
+•  ✅ jsonwebtoken 
+•  ✅ zod 
+•  ✅ helmet 
+•  ✅ express-rate-limit 
+•  ✅ cookie-parser 
+•  ✅ morgan 
+•  ✅ multer 
+•  ✅ cloudinary 
+•  ✅ nodemailer 
+•  ✅ dayjs 
+•  ✅ stripe 
+•  ✅ http-status-codes 
+•  ✅pdfkit
+•  ✅ nodemon 
+
+Folder structure
+config/
+models/
+uploads/
+validators/
+middleware/
+utils/
+controllers/
+routes/
+.env 
+ .env.example
+ .gitignore
+package.json 
+README.md
+app.js 
+ server.js
+
+ERD 
+User
+-----
+_id
+firstName
+lastName
+email
+password
+phoneNumber
+profilePicture
+role
+isEmailVerified
+accountStatus
+lastLogin
+createdAt
+updatedAt
+
+Patient
+---------
+_id (PK)
+userId (FK)
+dateOfBirth
+gender
+bloodGroup
+allergies
+chronicConditions
+height
+weight
+createdAt
+updatedAt
+
+Doctor
+---------
+_id (PK)
+userId (FK)
+specialtyId (FK)
+licenseNumber
+qualification
+yearsOfExperience
+consultationFee
+bio
+verificationStatus
+averageRating
+totalReviews
+createdAt
+updatedAt
+
+Specialty
+-----------
+_id (PK)
+name
+description
+isActive
+createdAt
+updatedAt
+
+Appointment
+-------------
+_id (PK)
+patientId (FK)
+doctorId (FK)
+appointmentDate
+startTime
+endTime
+reasonForVisit
+status
+cancelReason
+createdBy
+createdAt
+updatedAt
+
+MedicalRecord
+--------------
+_id (PK)
+appointmentId (FK)
+patientId (FK)
+doctorId (FK)
+diagnosis
+symptoms
+treatmentPlan
+notes
+followUpDate
+createdAt
+updatedAt
+
+Availability
+--------------
+_id (PK)
+doctorId (FK)
+dayOfWeek
+startTime
+endTime
+breakStartTime
+breakEndTime
+isAvailable
+createdAt
+updatedAt
+
+Prescription
+--------------
+_id (PK)
+medicalRecordId (FK)
+appointmentId (FK)
+patientId (FK)
+doctorId (FK)
+medicationName
+dosage
+frequency
+duration
+instructions
+createdAt
+updatedAt
+
+Report
+---------
+_id (PK)
+medicalRecordId (FK)
+patientId (FK)
+uploadedBy
+reportType
+title
+fileUrl
+notes
+createdAt
+updatedAt
+
+Payment
+---------
+_id (PK)
+appointmentId (FK)
+patientId (FK)
+doctorId (FK)
+amount
+paymentMethod
+paymentStatus
+paymentIntentId
+paidAt
+refundAmount
+refundReason
+createdAt
+updatedAt
+
+Review
+---------
+_id (PK)
+patientId (FK)
+doctorId (FK)
+appointmentId (FK)
+rating
+comment
+isApproved
+createdAt
+updatedAt
+
+Notification
+--------------
+_id (PK)
+userId (FK)
+title
+message
+type
+isRead
+readAt
+createdAt
+updatedAt
+
+EmergencyContact
+-----------------
+_id (PK)
+patientId (FK)
+fullName
+relationship
+phoneNumber
+email
+address
+isPrimary
+createdAt
+updatedAt
+
+Address
+-----------
+_id (PK)
+patientId (FK)
+addressType
+street
+city
+state
+country
+postalCode
+isDefault
+createdAt
+updatedAt
+
+AuditLog
+-----------
+_id (PK)
+userId (FK)
+action
+entityName
+entityId
+description
+ipAddress
+userAgent
+createdAt
+
+api endpoint
+
+POST /api/auth/login
+Client
+  |
+  | POST /auth/login
+  |
+  ↓
+Auth Route
+  |
+  ↓
+Auth Controller
+  |
+  ↓
+Validate email and password fields
+  |
+  ↓
+Find user by email
+  |
+  ↓
+Check if user exists
+  |
+  ↓
+Compare entered password with hashed password
+  |
+  ↓
+Check account status and if email is verified
+  |
+  ↓
+Generate Access Token
+  |
+  ↓
+Generate Refresh Token
+  |
+  ↓
+Save refresh token (optional)
+  |
+  ↓
+Return user details + tokens
+
+POST /api/auth/register
+Patient
+  |
+  | POST /auth/register
+  |
+  ↓
+Auth Route
+  |
+  ↓
+Auth Controller
+  |
+  ↓
+Validate request data
+  |
+  ↓
+Check if email already exists
+  |
+  ↓
+Hash password using bcrypt
+  |
+  ↓
+Create User account
+  |
+  ↓
+Create Patient profile
+  |
+  ↓
+Generate email verification token
+  |
+  ↓
+Send verification email
+  |
+  ↓
+Return success response
+
+POST /api/auth/logout
+User
+ |
+ | POST /auth/logout
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify access token
+ |
+ ↓
+Auth Controller
+ |
+ ↓
+Find refresh token/session
+ |
+ ↓
+Remove or invalidate refresh token
+ |
+ ↓
+Clear authentication cookie
+ |
+ ↓
+Return success response
+
+POST /api/auth/logout
+User
+ |
+ | POST /auth/logout
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify access token
+ |
+ ↓
+Auth Controller
+ |
+ ↓
+Find refresh token/session
+ |
+ ↓
+Remove or invalidate refresh token
+ |
+ ↓
+Clear authentication cookie
+ |
+ ↓
+Return success response
+
+POST /api/auth/forgot-password
+User
+ |
+ | POST /auth/forgot-password
+ |
+ ↓
+Auth Controller
+ |
+ ↓
+Validate email
+ |
+ ↓
+Find user by email
+ |
+ ↓
+Generate password reset token
+ |
+ ↓
+Save token + expiry time
+ |
+ ↓
+Send password reset email
+ |
+ ↓
+Return success response
+
+POST /auth/reset-password
+User clicks reset link
+        |
+        ↓
+POST /auth/reset-password/:token
+        |
+        ↓
+Auth Controller
+        |
+        ↓
+Validate new password
+        |
+        ↓
+Find reset token
+        |
+        ↓
+Check token expiry
+        |
+        ↓
+Find user using userId
+        |
+        ↓
+Hash new password
+        |
+        ↓
+Update User password
+        |
+        ↓
+Delete used reset token
+        |
+        ↓
+Return success response
+
+POST /api/auth/verify-email
+User clicks verification link
+        |
+        ↓
+POST /auth/verify-email
+        |
+        ↓
+Auth Controller
+        |
+        ↓
+Validate token
+        |
+        ↓
+Find EmailVerificationToken
+        |
+        ↓
+Check token expiry
+        |
+        ↓
+Find User using userId
+        |
+        ↓
+Update User:
+isEmailVerified = true
+        |
+        ↓
+Delete verification token
+        |
+        ↓
+Return success response
+
+PATCH /api/auth/change-password
+User
+ |
+ | PATCH /auth/change-password
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Get logged-in user ID
+ |
+ ↓
+Auth Controller
+ |
+ ↓
+Find user by ID
+ |
+ ↓
+Compare current password
+ |
+ ↓
+Validate new password
+ |
+ ↓
+Hash new password
+ |
+ ↓
+Update User password
+ |
+ ↓
+Invalidate old sessions (optional)
+ |
+ ↓
+Return success response
+
+POST /api/auth/refresh-token
+User
+ |
+ | POST /auth/refresh-token
+ |
+ ↓
+Auth Controller
+ |
+ ↓
+Get refresh token
+ |
+ ↓
+Verify refresh token
+ |
+ ↓
+Find refresh token in database
+ |
+ ↓
+Check expiry
+ |
+ ↓
+Find associated user
+ |
+ ↓
+Generate new access token
+ |
+ ↓
+(Optional) Rotate refresh token
+ |
+ ↓
+Return new tokens
+
+POST /api/auth/resend-verification
+User
+ |
+ | POST /auth/resend-verification
+ |
+ ↓
+Auth Controller
+ |
+ ↓
+Validate email
+ |
+ ↓
+Find user by email
+ |
+ ↓
+Check if email already verified
+ |
+ ↓
+Invalidate old verification token (if exists)
+ |
+ ↓
+Generate new verification token
+ |
+ ↓
+Save token + expiry
+ |
+ ↓
+Send verification email
+ |
+ ↓
+Return success response
+
+GET /api/patients/profile
+Patient
+ |
+ | GET /patients/profile
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = patient
+ |
+ ↓
+Patient Controller
+ |
+ ↓
+Get userId from token
+ |
+ ↓
+Find Patient profile
+ |
+ ↓
+Populate User details
+ |
+ ↓
+Return patient profile
+
+PATCH /api/patients/profile
+Patient
+ |
+ | PATCH /patients/profile
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = patient
+ |
+ ↓
+Patient Controller
+ |
+ ↓
+Get userId from token
+ |
+ ↓
+Validate update fields
+ |
+ ↓
+Find Patient profile
+ |
+ ↓
+Update patient information
+ |
+ ↓
+Save changes
+ |
+ ↓
+Return updated profile
+
+DELETE /api/patients/profile
+Patient
+ |
+ | DELETE /patients/profile
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = patient
+ |
+ ↓
+Patient Controller
+ |
+ ↓
+Get userId from token
+ |
+ ↓
+Find patient account
+ |
+ ↓
+Check existing records
+ |
+ ↓
+Deactivate/Delete account
+ |
+ ↓
+Remove sessions/tokens
+ |
+ ↓
+Return success response
+
+POST /api/patients/profile-picture
+Patient
+ |
+ | POST /patients/profile-picture
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = patient
+ |
+ ↓
+Upload Middleware (Multer)
+ |
+ ↓
+Receive image file
+ |
+ ↓
+Upload image to Cloudinary
+ |
+ ↓
+Get image URL
+ |
+ ↓
+Update User profilePicture field
+ |
+ ↓
+Return updated profile picture URL
+
+GET /api/patients/dashboard
+Patient
+ |
+ | GET /patients/dashboard
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = patient
+ |
+ ↓
+Patient Dashboard Controller
+ |
+ ↓
+Get patientId from token
+ |
+ ↓
+Fetch dashboard statistics
+ |
+ ↓
+Combine data
+ |
+ ↓
+Return dashboard response
+
+GET /api/patients/medical-records
+
+Patient
+ |
+ | GET /patients/medical-records
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = patient
+ |
+ ↓
+Medical Record Controller
+ |
+ ↓
+Get patientId from token
+ |
+ ↓
+Find medical records belonging to patient
+ |
+ ↓
+Populate doctor and appointment details
+ |
+ ↓
+Return medical history
+
+GET /api/patients/prescriptions
+Patient
+ |
+ | GET /patients/prescriptions
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = patient
+ |
+ ↓
+Prescription Controller
+ |
+ ↓
+Get patientId from token
+ |
+ ↓
+Find prescriptions belonging to patient
+ |
+ ↓
+Populate doctor and appointment details
+ |
+ ↓
+Return prescriptions
+
+GET /api/patients/appointments
+Patient
+ |
+ | GET /patients/appointments
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = patient
+ |
+ ↓
+Appointment Controller
+ |
+ ↓
+Get patientId from token
+ |
+ ↓
+Find patient's appointments
+ |
+ ↓
+Populate doctor details
+ |
+ ↓
+Apply filters (optional)
+ |
+ ↓
+Return appointments
+
+GET /api/patients/upcoming-appointments
+Patient
+ |
+ | GET /patients/upcoming-appointments
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = patient
+ |
+ ↓
+Appointment Controller
+ |
+ ↓
+Get patientId from token
+ |
+ ↓
+Find future appointments
+ |
+ ↓
+Filter status
+ |
+ ↓
+Populate doctor details
+ |
+ ↓
+Return upcoming appointments
+
+POST /api/patients/emergency-contacts
+Patient
+ |
+ | POST /patients/emergency-contacts
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = patient
+ |
+ ↓
+Emergency Contact Controller
+ |
+ ↓
+Get patientId from token
+ |
+ ↓
+Validate contact details
+ |
+ ↓
+Create emergency contact
+ |
+ ↓
+Link contact to patient
+ |
+ ↓
+Return saved contact
+
+GET /api/patients/emergency-contacts
+Patient
+ |
+ | GET /patients/emergency-contacts
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = patient
+ |
+ ↓
+Emergency Contact Controller
+ |
+ ↓
+Get patientId from token
+ |
+ ↓
+Find emergency contacts
+ |
+ ↓
+Return contacts
+
+PATCH /api/patients/emergency-contacts/:id
+Patient
+ |
+ | PATCH /patients/emergency-contacts/:id
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = patient
+ |
+ ↓
+Emergency Contact Controller
+ |
+ ↓
+Get patientId from token
+ |
+ ↓
+Find emergency contact by ID
+ |
+ ↓
+Verify contact belongs to patient
+ |
+ ↓
+Validate update data
+ |
+ ↓
+Update emergency contact
+ |
+ ↓
+Return updated contact
+
+DELETE /api/patients/emergency-contacts/:id
+Patient
+ |
+ | DELETE /patients/emergency-contacts/:id
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = patient
+ |
+ ↓
+Emergency Contact Controller
+ |
+ ↓
+Get patientId from token
+ |
+ ↓
+Find emergency contact by ID
+ |
+ ↓
+Verify contact belongs to patient
+ |
+ ↓
+Delete emergency contact
+ |
+ ↓
+Return success response
+
+POST /api/patients/addresses
+Patient
+ |
+ | POST /patients/addresses
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = patient
+ |
+ ↓
+Address Controller
+ |
+ ↓
+Get patientId from token
+ |
+ ↓
+Validate address details
+ |
+ ↓
+Check existing default address
+ |
+ ↓
+Create address
+ |
+ ↓
+Link address to patient
+ |
+ ↓
+Return saved address
+
+GET /api/patients/addresses
+Patient
+ |
+ | GET /patients/addresses
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = patient
+ |
+ ↓
+Address Controller
+ |
+ ↓
+Get patientId from token
+ |
+ ↓
+Find patient's addresses
+ |
+ ↓
+Sort addresses
+ |
+ ↓
+Return addresses
+
+PATCH /api/patients/addresses/:id
+Patient
+ |
+ | PATCH /patients/addresses/:id
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = patient
+ |
+ ↓
+Address Controller
+ |
+ ↓
+Get patientId from token
+ |
+ ↓
+Find address by ID
+ |
+ ↓
+Verify address belongs to patient
+ |
+ ↓
+Validate update fields
+ |
+ ↓
+Update address
+ |
+ ↓
+Return updated address
+
+DELETE /api/patients/addresses/:id
+Patient
+ |
+ | DELETE /patients/addresses/:id
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = patient
+ |
+ ↓
+Address Controller
+ |
+ ↓
+Get patientId from token
+ |
+ ↓
+Find address by ID
+ |
+ ↓
+Verify address belongs to patient
+ |
+ ↓
+Check if address is default
+ |
+ ↓
+Delete address
+ |
+ ↓
+Return success response
+
+POST /api/patients/favorites/:doctorId
+Patient
+ |
+ | POST /patients/favorites/:doctorId
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = patient
+ |
+ ↓
+Favorite Controller
+ |
+ ↓
+Get patientId from token
+ |
+ ↓
+Check if doctor exists
+ |
+ ↓
+Check if already favorited
+ |
+ ↓
+Create favorite relationship
+ |
+ ↓
+Return success response
+
+DELETE /api/patients/favorites/:doctorId
+Patient
+ |
+ | DELETE /patients/favorites/:doctorId
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = patient
+ |
+ ↓
+Favorite Controller
+ |
+ ↓
+Get patientId from token
+ |
+ ↓
+Find favorite relationship
+ |
+ ↓
+Verify favorite belongs to patient
+ |
+ ↓
+Delete favorite record
+ |
+ ↓
+Return success response
+
+GET /api/doctors
+Client
+ |
+ | GET /doctors
+ |
+ ↓
+Doctor Controller
+ |
+ ↓
+Read query parameters
+ |
+ ↓
+Build database filters
+ |
+ ↓
+Find doctors
+ |
+ ↓
+Populate doctor profile
+ |
+ ↓
+Apply pagination
+ |
+ ↓
+Return doctor list
+
+GET /api/doctors/:id
+Client
+ |
+ | GET /doctors/:id
+ |
+ ↓
+Doctor Controller
+ |
+ ↓
+Get doctorId from params
+ |
+ ↓
+Find doctor profile
+ |
+ ↓
+Populate related information
+ |
+ ↓
+Return doctor details
+
+GET /api/doctors/:id/availability
+Patient
+ |
+ | GET /doctors/:id/availability
+ |
+ ↓
+Doctor Controller
+ |
+ ↓
+Get doctorId from params
+ |
+ ↓
+Verify doctor exists
+ |
+ ↓
+Fetch doctor's availability
+ |
+ ↓
+Generate available slots
+ |
+ ↓
+Remove booked slots
+ |
+ ↓
+Return available time slots
+GET /doctors/:id/reviews
+Patient
+ |
+ | GET /doctors/:id/reviews
+ |
+ ↓
+Doctor Review Controller
+ |
+ ↓
+Get doctorId from params
+ |
+ ↓
+Verify doctor exists
+ |
+ ↓
+Fetch doctor reviews
+ |
+ ↓
+Calculate rating summary
+ |
+ ↓
+Return reviews
+
+GET /api/doctors/:id/qualifications
+Patient
+ |
+ | GET /doctors/:id/qualifications
+ |
+ ↓
+Doctor Controller
+ |
+ ↓
+Get doctorId from params
+ |
+ ↓
+Verify doctor exists
+ |
+ ↓
+Fetch doctor qualifications
+ |
+ ↓
+Return qualifications
+
+GET /api/doctors/search
+Patient
+ |
+ | GET /doctors/search
+ |
+ ↓
+Doctor Controller
+ |
+ ↓
+Receive search parameters
+ |
+ ↓
+Build MongoDB query
+ |
+ ↓
+Search doctors
+ |
+ ↓
+Populate doctor information
+ |
+ ↓
+Apply pagination
+ |
+ ↓
+Return matching doctors
+
+GET /api/doctor/profile
+Doctor
+ |
+ | GET /doctor/profile
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = doctor
+ |
+ ↓
+Doctor Controller
+ |
+ ↓
+Get doctorId from token
+ |
+ ↓
+Find doctor profile
+ |
+ ↓
+Populate related information
+ |
+ ↓
+Return doctor profile
+
+PATCH /api/doctor/profile
+Doctor
+ |
+ | PATCH /doctor/profile
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = doctor
+ |
+ ↓
+Doctor Controller
+ |
+ ↓
+Get doctorId from token
+ |
+ ↓
+Validate update fields
+ |
+ ↓
+Find doctor profile
+ |
+ ↓
+Update doctor information
+ |
+ ↓
+Save changes
+ |
+ ↓
+Return updated profile
+
+PATCH /api/doctor/consultation-fee
+Doctor
+ |
+ | PATCH /doctor/consultation-fee
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = doctor
+ |
+ ↓
+Doctor Controller
+ |
+ ↓
+Get doctorId from token
+ |
+ ↓
+Validate consultation fee
+ |
+ ↓
+Find doctor profile
+ |
+ ↓
+Update consultation fee
+ |
+ ↓
+Return updated fee
+
+POST /api/doctor/profile-picture
+Doctor
+ |
+ | POST /doctor/profile-picture
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = doctor
+ |
+ ↓
+Upload Middleware (Multer)
+ |
+ ↓
+Receive image file
+ |
+ ↓
+Upload image to Cloudinary
+ |
+ ↓
+Get image URL
+ |
+ ↓
+Update User profilePicture field
+ |
+ ↓
+Return updated image URL
+
+POST /api/doctor/availability
+Doctor
+ |
+ | POST /doctor/availability
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = doctor
+ |
+ ↓
+Availability Controller
+ |
+ ↓
+Get doctorId from token
+ |
+ ↓
+Validate schedule details
+ |
+ ↓
+Check existing availability
+ |
+ ↓
+Create availability record
+ |
+ ↓
+Return saved schedule
+
+GET /api/doctor/availability
+Doctor
+ |
+ | GET /doctor/availability
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = doctor
+ |
+ ↓
+Availability Controller
+ |
+ ↓
+Get doctorId from token
+ |
+ ↓
+Find doctor's availability
+ |
+ ↓
+Sort schedule
+ |
+ ↓
+Return availability list
+
+PATCH /api/doctor/availability/:id
+Doctor
+ |
+ | PATCH /doctor/availability/:id
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = doctor
+ |
+ ↓
+Availability Controller
+ |
+ ↓
+Get doctorId from token
+ |
+ ↓
+Find availability by ID
+ |
+ ↓
+Verify it belongs to doctor
+ |
+ ↓
+Validate new schedule
+ |
+ ↓
+Update availability
+ |
+ ↓
+Return updated schedule
+
+DELETE /api/doctor/availability/:id
+Doctor
+ |
+ | DELETE /doctor/availability/:id
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = doctor
+ |
+ ↓
+Availability Controller
+ |
+ ↓
+Get doctorId from token
+ |
+ ↓
+Find availability by ID
+ |
+ ↓
+Verify it belongs to doctor
+ |
+ ↓
+Check future appointments
+ |
+ ↓
+Delete availability
+ |
+ ↓
+Return success response
+
+POST /api/doctor/unavailable-dates
+Doctor
+ |
+ | POST /doctor/unavailable-dates
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = doctor
+ |
+ ↓
+Unavailable Date Controller
+ |
+ ↓
+Get doctorId from token
+ |
+ ↓
+Validate date
+ |
+ ↓
+Check existing unavailable date
+ |
+ ↓
+Create unavailable date record
+ |
+ ↓
+Return blocked date
+
+POST /api/appointments
+Patient
+ |
+ | POST /appointments
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = patient
+ |
+ ↓
+Appointment Controller
+ |
+ ↓
+Get patientId from token
+ |
+ ↓
+Validate request data
+ |
+ ↓
+Verify doctor exists
+ |
+ ↓
+Check doctor availability
+ |
+ ↓
+Check unavailable dates
+ |
+ ↓
+Check existing appointments
+ |
+ ↓
+Calculate consultation fee
+ |
+ ↓
+Create appointment
+ |
+ ↓
+Create payment record (if online payment)
+ |
+ ↓
+Send notifications
+ |
+ ↓
+Return appointment details
+
+GET /api/appointments
+User
+ |
+ | GET /appointments
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check user role
+ |
+ ↓
+Appointment Controller
+ |
+ ↓
+Get userId from token
+ |
+ ↓
+Build query based on role
+ |
+ ↓
+Fetch appointments
+ |
+ ↓
+Populate doctor/patient details
+ |
+ ↓
+Return appointment list
+
+GET /api/appointments/:id
+User
+ |
+ | GET /appointments/:id
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Get userId and role
+ |
+ ↓
+Appointment Controller
+ |
+ ↓
+Find appointment by ID
+ |
+ ↓
+Check ownership
+ |
+ ↓
+Populate related data
+ |
+ ↓
+Return appointment details
+
+PATCH /api/appointments/:id/reschedule
+User
+ |
+ | PATCH /appointments/:id/reschedule
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role
+ |
+ ↓
+Appointment Controller
+ |
+ ↓
+Find appointment
+ |
+ ↓
+Verify user owns appointment
+ |
+ ↓
+Check appointment status
+ |
+ ↓
+Check doctor availability
+ |
+ ↓
+Check unavailable dates
+ |
+ ↓
+Check slot conflicts
+ |
+ ↓
+Update appointment date/time
+ |
+ ↓
+Update status = rescheduled
+ |
+ ↓
+Send notifications
+ |
+ ↓
+Return updated appointment
+
+PATCH /appointments/:id/cancel
+User
+ |
+ | PATCH /appointments/:id/cancel
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check user role
+ |
+ ↓
+Appointment Controller
+ |
+ ↓
+Find appointment
+ |
+ ↓
+Verify ownership
+ |
+ ↓
+Check appointment status
+ |
+ ↓
+Update status = cancelled
+ |
+ ↓
+Handle refund (if payment exists)
+ |
+ ↓
+Send notifications
+ |
+ ↓
+Return response
+
+PATCH /api/appointments/:id/accept
+Doctor
+ |
+ | PATCH /appointments/:id/accept
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = doctor
+ |
+ ↓
+Appointment Controller
+ |
+ ↓
+Get doctorId from token
+ |
+ ↓
+Find appointment
+ |
+ ↓
+Verify appointment belongs to doctor
+ |
+ ↓
+Check current status = pending
+ |
+ ↓
+Update status = confirmed
+ |
+ ↓
+Notify patient
+ |
+ ↓
+Return updated appointment
+
+PATCH /api/appointments/:id/reject
+Doctor
+ |
+ | PATCH /appointments/:id/reject
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = doctor
+ |
+ ↓
+Appointment Controller
+ |
+ ↓
+Get doctorId from token
+ |
+ ↓
+Find appointment
+ |
+ ↓
+Verify appointment belongs to doctor
+ |
+ ↓
+Check status = pending
+ |
+ ↓
+Update status = cancelled/rejected
+ |
+ ↓
+Save rejection reason
+ |
+ ↓
+Notify patient
+ |
+ ↓
+Return response
+
+PATCH /appointments/:id/check-in
+Doctor/Admin
+ |
+ | PATCH /appointments/:id/check-in
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role
+ |
+ ↓
+Appointment Controller
+ |
+ ↓
+Get appointment ID
+ |
+ ↓
+Find appointment
+ |
+ ↓
+Verify appointment belongs to doctor (if doctor)
+ |
+ ↓
+Check status = confirmed
+ |
+ ↓
+Update status = checked_in
+ |
+ ↓
+Record check-in time
+ |
+ ↓
+Send notification
+ |
+ ↓
+Return updated appointment
+
+PATCH /api/appointments/:id/complete
+Doctor
+ |
+ | PATCH /appointments/:id/complete
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = doctor
+ |
+ ↓
+Appointment Controller
+ |
+ ↓
+Get doctorId from token
+ |
+ ↓
+Find appointment
+ |
+ ↓
+Verify appointment belongs to doctor
+ |
+ ↓
+Check status = in_progress
+ |
+ ↓
+Update status = completed
+ |
+ ↓
+Record completion time
+ |
+ ↓
+Trigger payment settlement
+ |
+ ↓
+Send notification
+ |
+ ↓
+Return updated appointment
+
+PATCH /api/appointments/:id/no-show
+Doctor
+ |
+ | PATCH /appointments/:id/no-show
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = doctor
+ |
+ ↓
+Appointment Controller
+ |
+ ↓
+Get doctorId from token
+ |
+ ↓
+Find appointment
+ |
+ ↓
+Verify appointment belongs to doctor
+ |
+ ↓
+Check appointment status
+ |
+ ↓
+Update status = no_show
+ |
+ ↓
+Record no-show time
+ |
+ ↓
+Handle payment/refund policy
+ |
+ ↓
+Notify patient
+ |
+ ↓
+Return updated appointment
+
+POST /api/prescriptions
+Doctor
+ |
+ | POST /prescriptions
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = doctor
+ |
+ ↓
+Prescription Controller
+ |
+ ↓
+Get doctorId from token
+ |
+ ↓
+Validate appointment
+ |
+ ↓
+Check appointment belongs to doctor
+ |
+ ↓
+Check appointment status = completed
+ |
+ ↓
+Create prescription
+ |
+ ↓
+Save medical record reference
+ |
+ ↓
+Send notification to patient
+ |
+ ↓
+Return prescription details
+
+GET /api/prescriptions
+User
+ |
+ | GET /prescriptions
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check user role
+ |
+ ↓
+Prescription Controller
+ |
+ ↓
+Get userId from token
+ |
+ ↓
+Build query based on role
+ |
+ ↓
+Fetch prescriptions
+ |
+ ↓
+Populate doctor/patient details
+ |
+ ↓
+Return prescriptions
+
+GET /api/prescriptions/:id
+User
+ |
+ | GET /prescriptions/:id
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Get userId and role
+ |
+ ↓
+Prescription Controller
+ |
+ ↓
+Find prescription by ID
+ |
+ ↓
+Verify ownership
+ |
+ ↓
+Populate doctor/patient/appointment
+ |
+ ↓
+Return prescription details
+
+PATCH /api/prescriptions/:id
+Doctor
+ |
+ | PATCH /prescriptions/:id
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = doctor
+ |
+ ↓
+Prescription Controller
+ |
+ ↓
+Get doctorId from token
+ |
+ ↓
+Find prescription
+ |
+ ↓
+Verify doctor owns prescription
+ |
+ ↓
+Validate update fields
+ |
+ ↓
+Update prescription
+ |
+ ↓
+Save changes
+ |
+ ↓
+Notify patient
+ |
+ ↓
+Return updated prescription
+
+DELETE /api/prescriptions/:id
+Doctor
+ |
+ | DELETE /prescriptions/:id
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = doctor
+ |
+ ↓
+Prescription Controller
+ |
+ ↓
+Get doctorId from token
+ |
+ ↓
+Find prescription
+ |
+ ↓
+Verify doctor owns prescription
+ |
+ ↓
+Check prescription status
+ |
+ ↓
+Delete / soft delete prescription
+ |
+ ↓
+Create audit log
+ |
+ ↓
+Return response
+
+GET /api/prescriptions/:id/download
+User
+ |
+ | GET /prescriptions/:id/download
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check user role
+ |
+ ↓
+Prescription Controller
+ |
+ ↓
+Find prescription
+ |
+ ↓
+Verify ownership
+ |
+ ↓
+Fetch doctor/patient details
+ |
+ ↓
+Generate PDF file
+ |
+ ↓
+Set response headers
+ |
+ ↓
+Send PDF to user
+
+POST /api/medical-records
+Doctor
+ |
+ | POST /medical-records
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = doctor
+ |
+ ↓
+Medical Record Controller
+ |
+ ↓
+Get doctorId from token
+ |
+ ↓
+Validate appointment
+ |
+ ↓
+Verify appointment belongs to doctor
+ |
+ ↓
+Check appointment status
+ |
+ ↓
+Create medical record
+ |
+ ↓
+Link record to patient
+ |
+ ↓
+Notify patient
+ |
+ ↓
+Return record
+
+GET /api/medical-records
+User
+ |
+ | GET /medical-records
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check user role
+ |
+ ↓
+Medical Record Controller
+ |
+ ↓
+Get userId from token
+ |
+ ↓
+Build query based on role
+ |
+ ↓
+Fetch medical records
+ |
+ ↓
+Populate doctor/patient details
+ |
+ ↓
+Return records
+
+GET /api/medical-records/:id
+User
+ |
+ | GET /medical-records/:id
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Get userId and role
+ |
+ ↓
+Medical Record Controller
+ |
+ ↓
+Find medical record by ID
+ |
+ ↓
+Check access permission
+ |
+ ↓
+Populate doctor/patient/appointment data
+ |
+ ↓
+Return medical record details
+
+PATCH /api/medical-records/:id
+Doctor
+ |
+ | PATCH /medical-records/:id
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = doctor
+ |
+ ↓
+Medical Record Controller
+ |
+ ↓
+Get doctorId from token
+ |
+ ↓
+Find medical record
+ |
+ ↓
+Verify doctor owns record
+ |
+ ↓
+Validate update fields
+ |
+ ↓
+Update medical record
+ |
+ ↓
+Create audit log
+ |
+ ↓
+Return updated record
+
+POST /api/medical-records/:id/reports
+Doctor
+ |
+ | POST /medical-records/:id/reports
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT
+ |
+ ↓
+Check role = doctor
+ |
+ ↓
+Upload Middleware
+ |
+ ↓
+Upload file to storage
+ |
+ ↓
+Medical Record Controller
+ |
+ ↓
+Find medical record
+ |
+ ↓
+Verify doctor ownership
+ |
+ ↓
+Create report record
+ |
+ ↓
+Attach report to medical record
+ |
+ ↓
+Create audit log
+ |
+ ↓
+Return response
+
+POST /api/payments
+Patient
+ |
+ | POST /payments
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Payment Controller
+ |
+ ↓
+Get patientId from token
+ |
+ ↓
+Find appointment
+ |
+ ↓
+Verify appointment belongs to patient
+ |
+ ↓
+Check appointment status
+ |
+ ↓
+Get consultation fee
+ |
+ ↓
+Create payment record
+ |
+ ↓
+Create payment gateway session
+ |
+ ↓
+Return checkout URL
+
+GET /api/payments
+User
+ |
+ | GET /payments
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check user role
+ |
+ ↓
+Payment Controller
+ |
+ ↓
+Get userId from token
+ |
+ ↓
+Build query based on role
+ |
+ ↓
+Fetch payment records
+ |
+ ↓
+Populate appointment details
+ |
+ ↓
+Return payments
+
+GET /payments/:id
+User
+ |
+ | GET /payments/:id
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Get userId and role
+ |
+ ↓
+Payment Controller
+ |
+ ↓
+Find payment by ID
+ |
+ ↓
+Check access permission
+ |
+ ↓
+Populate appointment details
+ |
+ ↓
+Return payment details
+
+POST /api/payments/verify
+Patient
+ |
+ | POST /payments/verify
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT
+ |
+ ↓
+Payment Controller
+ |
+ ↓
+Find payment record
+ |
+ ↓
+Verify transaction with gateway
+ |
+ ↓
+Check payment status
+ |
+ ↓
+Update payment
+ |
+ ↓
+Update appointment payment status
+ |
+ ↓
+Confirm appointment (if required)
+ |
+ ↓
+Send notification
+ |
+ ↓
+Return success
+
+POST /api/payments/refund
+Admin/Doctor
+ |
+ | POST /payments/refund
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role permission
+ |
+ ↓
+Payment Controller
+ |
+ ↓
+Find payment
+ |
+ ↓
+Check payment status = paid
+ |
+ ↓
+Check refund eligibility
+ |
+ ↓
+Send refund request to gateway
+ |
+ ↓
+Update payment status
+ |
+ ↓
+Update appointment status
+ |
+ ↓
+Create audit log
+ |
+ ↓
+Notify patient
+ |
+ ↓
+Return response
+
+GET /api/payments/invoices/:id
+User
+ |
+ | GET /payments/invoices/:id
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check permissions
+ |
+ ↓
+Payment Controller
+ |
+ ↓
+Find payment
+ |
+ ↓
+Verify ownership/access
+ |
+ ↓
+Fetch appointment details
+ |
+ ↓
+Generate invoice PDF
+ |
+ ↓
+Return invoice file
+
+POST /api/reviews
+Patient
+ |
+ | POST /reviews
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = patient
+ |
+ ↓
+Review Controller
+ |
+ ↓
+Get patientId from token
+ |
+ ↓
+Validate appointment
+ |
+ ↓
+Check appointment belongs to patient
+ |
+ ↓
+Check appointment status = completed
+ |
+ ↓
+Check previous review
+ |
+ ↓
+Create review
+ |
+ ↓
+Update doctor rating
+ |
+ ↓
+Notify doctor
+ |
+ ↓
+Return review
+
+GET /api/reviews
+User
+ |
+ | GET /reviews
+ |
+ ↓
+Auth Middleware (if protected)
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Review Controller
+ |
+ ↓
+Build query based on filters
+ |
+ ↓
+Fetch reviews
+ |
+ ↓
+Populate doctor/patient details
+ |
+ ↓
+Return reviews
+
+PATCH /api/reviews/:id
+Patient
+ |
+ | PATCH /reviews/:id
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = patient
+ |
+ ↓
+Review Controller
+ |
+ ↓
+Get patientId from token
+ |
+ ↓
+Find review
+ |
+ ↓
+Verify patient owns review
+ |
+ ↓
+Validate update fields
+ |
+ ↓
+Update review
+ |
+ ↓
+Recalculate doctor rating
+ |
+ ↓
+Return updated review
+
+DELETE /api/reviews/:id
+User
+ |
+ | DELETE /reviews/:id
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role permission
+ |
+ ↓
+Review Controller
+ |
+ ↓
+Find review
+ |
+ ↓
+Verify ownership/permission
+ |
+ ↓
+Delete review
+ |
+ ↓
+Recalculate doctor rating
+ |
+ ↓
+Create audit log (Admin deletion)
+ |
+ ↓
+Return response
+GET /api/notifications
+User
+ |
+ | GET /notifications
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Get userId from token
+ |
+ ↓
+Notification Controller
+ |
+ ↓
+Find notifications belonging to user
+ |
+ ↓
+Sort newest first
+ |
+ ↓
+Return notifications
+
+PATCH /api/notifications/:id/read
+User
+ |
+ | PATCH /notifications/:id/read
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Get userId
+ |
+ ↓
+Notification Controller
+ |
+ ↓
+Find notification
+ |
+ ↓
+Verify notification belongs to user
+ |
+ ↓
+Update isRead = true
+ |
+ ↓
+Return updated notification
+
+PATCH /api/notifications/read-all
+User
+ |
+ | PATCH /notifications/read-all
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Get userId
+ |
+ ↓
+Notification Controller
+ |
+ ↓
+Find all unread notifications
+ |
+ ↓
+Update isRead = true
+ |
+ ↓
+Set readAt timestamp
+ |
+ ↓
+Return result
+
+GET /api/admin/dashboard
+Admin
+ |
+ | GET /admin/dashboard
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = admin
+ |
+ ↓
+Admin Controller
+ |
+ ↓
+Fetch system statistics
+ |
+ ↓
+Aggregate data
+ |
+ ↓
+Return dashboard data
+
+GET /api/admin/patients
+Admin
+ |
+ | GET /admin/patients
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = admin
+ |
+ ↓
+Admin Controller
+ |
+ ↓
+Build query filters
+ |
+ ↓
+Fetch patients
+ |
+ ↓
+Populate required details
+ |
+ ↓
+Return patient list
+
+GET /api/admin/patients/:id
+Admin
+ |
+ | GET /admin/patients/:id
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = admin
+ |
+ ↓
+Admin Controller
+ |
+ ↓
+Find patient by ID
+ |
+ ↓
+Fetch patient details
+ |
+ ↓
+Return patient information
+
+PATCH /api/admin/patients/:id
+Admin
+ |
+ | PATCH /admin/patients/:id
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT
+ |
+ ↓
+Check role = admin
+ |
+ ↓
+Admin Controller
+ |
+ ↓
+Find patient
+ |
+ ↓
+Validate update fields
+ |
+ ↓
+Update patient profile
+ |
+ ↓
+Create audit log
+ |
+ ↓
+Return updated patient
+
+PATCH /api/admin/patients/:id/suspend
+Admin
+ |
+ | PATCH /admin/patients/:id/suspend
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT
+ |
+ ↓
+Check admin role
+ |
+ ↓
+Find patient
+ |
+ ↓
+Check current account status
+ |
+ ↓
+Update status = suspended
+ |
+ ↓
+Store suspension reason
+ |
+ ↓
+Invalidate active sessions/tokens
+ |
+ ↓
+Create audit log
+ |
+ ↓
+Notify patient
+
+PATCH /api/admin/patients/:id/deactivate
+Admin
+ |
+ | PATCH /admin/patients/:id/deactivate
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT
+ |
+ ↓
+Check admin role
+ |
+ ↓
+Find patient
+ |
+ ↓
+Check account status
+ |
+ ↓
+Update status = inactive
+ |
+ ↓
+Invalidate sessions/tokens
+ |
+ ↓
+Create audit log
+ |
+ ↓
+Return response
+
+POST /api/admin/doctors
+Admin
+ |
+ | POST /admin/doctors
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT
+ |
+ ↓
+Check role = admin
+ |
+ ↓
+Validate doctor information
+ |
+ ↓
+Check email/license uniqueness
+ |
+ ↓
+Create doctor account
+ |
+ ↓
+Generate account setup token
+ |
+ ↓
+Send invitation email
+ |
+ ↓
+Return response
+
+GET /api/admin/doctors
+Admin
+ |
+ | GET /admin/doctors
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = admin
+ |
+ ↓
+Admin Controller
+ |
+ ↓
+Build filters
+ |
+ ↓
+Fetch doctors
+ |
+ ↓
+Populate doctor profiles
+ |
+ ↓
+Return doctors list
+
+GET /api/admin/doctors/:id
+Admin
+ |
+ | GET /admin/doctors/:id
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = admin
+ |
+ ↓
+Admin Controller
+ |
+ ↓
+Find doctor
+ |
+ ↓
+Fetch doctor profile
+ |
+ ↓
+Fetch related statistics
+ |
+ ↓
+Return doctor details
+
+PATCH /api/admin/doctors/:id
+Admin
+ |
+ | PATCH /admin/doctors/:id
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT
+ |
+ ↓
+Check role = admin
+ |
+ ↓
+Find doctor
+ |
+ ↓
+Validate update fields
+ |
+ ↓
+Update doctor profile
+ |
+ ↓
+Create audit log
+ |
+ ↓
+Return updated doctor
+
+PATCH /api/admin/doctors/:id/approve
+Admin
+ |
+ | PATCH /admin/doctors/:id/approve
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT
+ |
+ ↓
+Check role = admin
+ |
+ ↓
+Find doctor
+ |
+ ↓
+Check verification documents
+ |
+ ↓
+Update doctor status
+ |
+ ↓
+Mark verified = true
+ |
+ ↓
+Create audit log
+ |
+ ↓
+Send approval notification/email
+ |
+ ↓
+Return response
+
+PATCH /api/admin/doctors/:id/verify
+Admin
+ |
+ | PATCH /admin/doctors/:id/verify
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Check admin role
+ |
+ ↓
+Find doctor
+ |
+ ↓
+Review license & qualifications
+ |
+ ↓
+Update verification status
+ |
+ ↓
+Save verifier details
+ |
+ ↓
+Create audit log
+ |
+ ↓
+Notify doctor
+
+PATCH /api/admin/doctors/:id/suspend
+Admin
+ |
+ | PATCH /admin/doctors/:id/suspend
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Check admin role
+ |
+ ↓
+Find doctor
+ |
+ ↓
+Check current status
+ |
+ ↓
+Update status = suspended
+ |
+ ↓
+Disable doctor access
+ |
+ ↓
+Create audit log
+ |
+ ↓
+Notify doctor
+
+DELETE /api/admin/doctors/:id
+Admin
+ |
+ | DELETE /admin/doctors/:id
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Check admin role
+ |
+ ↓
+Find doctor
+ |
+ ↓
+Check active appointments
+ |
+ ↓
+Deactivate doctor account
+ |
+ ↓
+Hide doctor from listings
+ |
+ ↓
+Create audit log
+ |
+ ↓
+Notify doctor
+
+GET /api/admin/appointments
+Admin
+ |
+ | GET /admin/appointments
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT token
+ |
+ ↓
+Check role = admin
+ |
+ ↓
+Admin Controller
+ |
+ ↓
+Build filters
+ |
+ ↓
+Fetch appointments
+ |
+ ↓
+Populate patient & doctor details
+ |
+ ↓
+Return appointment list
+
+POST /api/admin/appointments
+Admin
+ |
+ | POST /admin/appointments
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Check admin role
+ |
+ ↓
+Validate patient
+ |
+ ↓
+Validate doctor
+ |
+ ↓
+Check doctor availability
+ |
+ ↓
+Check time slot conflict
+ |
+ ↓
+Create appointment
+ |
+ ↓
+Create notification
+ |
+ ↓
+Return appointment details
+
+PATCH /api/admin/appointments/:id
+Admin
+ |
+ | PATCH /admin/appointments/:id
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Check admin role
+ |
+ ↓
+Find appointment
+ |
+ ↓
+Validate changes
+ |
+ ↓
+Check doctor availability (if changed)
+ |
+ ↓
+Update appointment
+ |
+ ↓
+Notify patient/doctor
+ |
+ ↓
+Create audit log
+ |
+ ↓
+Return updated appointment
+
+PATCH /api/admin/appointments/:id/cancel
+Admin
+ |
+ | PATCH /admin/appointments/:id/cancel
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Check admin role
+ |
+ ↓
+Find appointment
+ |
+ ↓
+Check current appointment status
+ |
+ ↓
+Update status = cancelled
+ |
+ ↓
+Handle payment/refund if needed
+ |
+ ↓
+Notify patient & doctor
+ |
+ ↓
+Create audit log
+ |
+ ↓
+Return response
+
+PATCH /api/admin/appointments/:id/reschedule
+Admin
+ |
+ | PATCH /admin/appointments/:id/reschedule
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Check admin role
+ |
+ ↓
+Find appointment
+ |
+ ↓
+Validate new date/time
+ |
+ ↓
+Check doctor availability
+ |
+ ↓
+Check slot conflict
+ |
+ ↓
+Update appointment
+ |
+ ↓
+Notify patient & doctor
+ |
+ ↓
+Create audit log
+ |
+ ↓
+Return updated appointment
+
+PATCH /api/admin/appointments/:id/reassign
+Admin
+ |
+ | PATCH /admin/appointments/:id/reassign
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Check admin role
+ |
+ ↓
+Find appointment
+ |
+ ↓
+Validate new doctor
+ |
+ ↓
+Check doctor specialty match
+ |
+ ↓
+Check new doctor availability
+ |
+ ↓
+Update appointment doctor
+ |
+ ↓
+Notify patient & doctors
+ |
+ ↓
+Create audit log
+ |
+ ↓
+Return updated appointment
+
+POST /api/specialties
+Admin
+ |
+ | POST /specialties
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Check admin role
+ |
+ ↓
+Validate specialty data
+ |
+ ↓
+Check if specialty exists
+ |
+ ↓
+Create specialty
+ |
+ ↓
+Return created specialty
+
+GET /api/specialties
+User
+ |
+ | GET /specialties
+ |
+ ↓
+Specialty Controller
+ |
+ ↓
+Fetch active specialties
+ |
+ ↓
+Sort alphabetically
+ |
+ ↓
+Return specialties
+
+PATCH /api/specialties/:id
+Admin
+ |
+ | PATCH /specialties/:id
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Check admin role
+ |
+ ↓
+Find specialty
+ |
+ ↓
+Validate update data
+ |
+ ↓
+Check duplicate name
+ |
+ ↓
+Update specialty
+ |
+ ↓
+Return updated specialty
+
+DELETE /api/specialties/:id
+Admin
+ |
+ | DELETE /specialties/:id
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Check admin role
+ |
+ ↓
+Find specialty
+ |
+ ↓
+Check assigned doctors
+ |
+ ↓
+Deactivate specialty
+ |
+ ↓
+Hide from patient search
+ |
+ ↓
+Create audit log
+ |
+ ↓
+Return response
+
+GET /api/reports/revenue
+Admin
+ |
+ | GET /reports/revenue
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Check admin role
+ |
+ ↓
+Report Controller
+ |
+ ↓
+Aggregate successful payments
+ |
+ ↓
+Calculate revenue metrics
+ |
+ ↓
+Return report data
+
+GET /api/reports/appointments
+Admin
+ |
+ | GET /reports/appointments
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Check admin role
+ |
+ ↓
+Report Controller
+ |
+ ↓
+Aggregate appointments
+ |
+ ↓
+Calculate statistics
+ |
+ ↓
+Return appointment report
+GET /api/reports/doctors
+Admin
+ |
+ | GET /reports/doctors
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Check admin role
+ |
+ ↓
+Report Controller
+ |
+ ↓
+Aggregate doctor data
+ |
+ ↓
+Calculate performance metrics
+ |
+ ↓
+Return doctor report
+
+GET /api/reports/patients
+Admin
+ |
+ | GET /reports/patients
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify admin role
+ |
+ ↓
+Report Controller
+ |
+ ↓
+Aggregate patient data
+ |
+ ↓
+Calculate patient metrics
+ |
+ ↓
+Return patient report
+
+GET /api/audit-logs
+Admin
+ |
+ | GET /audit-logs
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Check admin permission
+ |
+ ↓
+Audit Log Controller
+ |
+ ↓
+Apply filters
+ |
+ ↓
+Fetch logs
+ |
+ ↓
+Return activity history
+
+POST /api/notifications
+Admin
+ |
+ | POST /notifications
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT
+ |
+ ↓
+Check admin role
+ |
+ ↓
+Validate recipients
+ |
+ ↓
+Create notification(s)
+ |
+ ↓
+Send push/email/SMS (optional)
+ |
+ ↓
+Return success response
+
+PATCH /api/admin/patients/:id/activate
+Admin
+ |
+ | PATCH /admin/patients/:id/activate
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT
+ |
+ ↓
+Check admin role
+ |
+ ↓
+Find patient
+ |
+ ↓
+Verify account is inactive/suspended
+ |
+ ↓
+Update status = active
+ |
+ ↓
+Clear suspension/deactivation metadata
+ |
+ ↓
+Create audit log
+ |
+ ↓
+Notify patient
+ |
+ ↓
+Return response
+
+PATCH /api/admin/doctors/:id/activate
+Admin
+ |
+ | PATCH /admin/doctors/:id/activate
+ |
+ ↓
+Auth Middleware
+ |
+ ↓
+Verify JWT
+ |
+ ↓
+Check admin role
+ |
+ ↓
+Find doctor
+ |
+ ↓
+Verify doctor is suspended/inactive
+ |
+ ↓
+Update doctor status = active
+ |
+ ↓
+Update user account status = active
+ |
+ ↓
+Create audit log
+ |
+ ↓
+Notify doctor
+ |
+ ↓
+Return response
+
+
+
+Additions
+GET /api/admin/doctors/:id/performance
+Admin
+ |
+ | GET /admin/doctors/:id/performance
+ |
+ ↓
+Verify JWT
+ |
+ ↓
+Check Admin Role
+ |
+ ↓
+Find Doctor
+ |
+ ↓
+Aggregate
+Appointments
+Payments
+Reviews
+Prescriptions
+ |
+ ↓
+Calculate Metrics
+ |
+ ↓
+Return Performance Report
+
+GET /api/admin/patients/:id/dashboard
+Admin
+ |
+ | GET /admin/patients/:id/dashboard
+ |
+ ↓
+Verify JWT
+ |
+ ↓
+Check Admin Role
+ |
+ ↓
+Find Patient
+ |
+ ↓
+Aggregate Data
+ |
+ ├── User
+ ├── Appointments
+ ├── Payments
+ ├── Medical Records
+ ├── Prescriptions
+ ├── Reviews
+ └── Notifications
+ |
+ ↓
+Return Dashboard
+
+GET /doctor/patients/:id
+Doctor
+   |
+   | GET /doctor/patients/:id/dashboard
+   |
+   ▼
+Authentication Middleware
+   |
+   ▼
+Role Middleware (Doctor)
+   |
+   ▼
+Patient Controller
+   |
+   ▼
+Find Doctor
+   |
+   ▼
+Verify Doctor has access to patient
+   |
+   ▼
+Fetch Patient Profile
+   |
+   ▼
+Fetch Appointments
+   |
+   ▼
+Fetch Medical Records
+   |
+   ▼
+Fetch Prescriptions
+   |
+   ▼
+Fetch Reports
+   |
+   ▼
+Fetch Reviews (Optional)
+   |
+   ▼
+Build Dashboard Object
+   |
+   ▼
+Return Response
+
+GET /doctor/reviews
+
+Doctor
+   |
+   | GET /doctor/reviews
+   |
+   ▼
+Authentication Middleware
+   |
+   ▼
+Role Middleware (Doctor)
+   |
+   ▼
+Review Controller
+   |
+   ▼
+Find Logged-in Doctor
+   |
+   ▼
+Fetch Reviews
+(review.doctorId = loggedInDoctor._id)
+   |
+   ▼
+Calculate Rating Summary (optional)
+   |
+   ▼
+Return Reviews
+
+User
+   |
+   | GET /specialties/:id/doctors
+   |
+   ▼
+Specialty Controller
+   |
+   ▼
+Validate Specialty ID
+   |
+   ▼
+Find Specialty
+   |
+   ▼
+Specialty Exists?
+   |
+ ┌──────┴──────┐
+ │             │
+No            Yes
+ │             │
+404            ▼
+         Fetch Doctors
+         (specialtyId = :id)
+         AND
+         status = active
+         AND
+         isApproved = true
+         AND
+         isVerified = true
+               |
+               ▼
+        Populate Specialty
+               |
+               ▼
+      Apply Pagination/Filters
+               |
+               ▼
+        Return Doctors List
+
+POST /api/payments/webhook
+Patient
+    |
+    | Initiates payment
+    |
+    ▼
+Payment Gateway (Stripe)
+    |
+    | Payment processed
+    |
+    ▼
+Stripe
+    |
+    | POST /api/payments/webhook
+    |
+    ▼
+Webhook Controller
+    |
+    ▼
+Verify Webhook Signature
+    |
+    ▼
+Valid Signature?
+    |
+ ┌──┴─────────┐
+ │            │
+No           Yes
+ │            │
+400          ▼
+        Read Event Type
+              |
+              ▼
+     payment_intent.succeeded?
+              |
+      ┌───────┴────────┐
+      │                │
+     No               Yes
+      │                │
+ Ignore Event          ▼
+                 Find Payment
+                      |
+                      ▼
+              Update Payment Status
+                 status = paid
+                      |
+                      ▼
+             Update Appointment
+             paymentStatus = paid
+                      |
+                      ▼
+            Send Notification
+                      |
+                      ▼
+              Create Audit Log
+                      |
+                      ▼
+            Return HTTP 200 OK
+
+
+
+
+
+
+
+
