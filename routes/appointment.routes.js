@@ -6,7 +6,7 @@ const authorizeRoles = require("../middleware/role.middleware");
 const validate = require("../middleware/validate.middleware");
 
 const {
-  createAppointmentSchema, rescheduleAppointmentSchema, cancelAppointmentSchema, rejectAppointmentSchema,
+  createAppointmentSchema, rescheduleAppointmentSchema, cancelAppointmentSchema, rejectAppointmentSchema, createFollowUpSchema,
 } = require("../validators/appointment.validator");
 
 const router = express.Router();
@@ -25,5 +25,8 @@ router.patch("/:id/reject", authorizeRoles("doctor"), validate(rejectAppointment
 router.patch("/:id/check-in", authorizeRoles("doctor", "admin"), appointmentController.checkInAppointment);
 router.patch("/:id/complete", authorizeRoles("doctor"), appointmentController.completeAppointment);
 router.patch("/:id/no-show", authorizeRoles("doctor"), appointmentController.markNoShow);
+
+router.post("/:id/follow-up", authorizeRoles("patient", "doctor"), validate(createFollowUpSchema), appointmentController.createFollowUpAppointment);
+router.get("/:id/follow-ups", authorizeRoles("patient", "doctor", "admin"), appointmentController.getFollowUps);
 
 module.exports = router;
