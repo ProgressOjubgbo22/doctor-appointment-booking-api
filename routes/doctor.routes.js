@@ -1,6 +1,7 @@
 const express = require("express");
 
 const doctorController = require("../controllers/doctor.controller");
+const complaintController = require("../controllers/complaint.controller");
 const verifyJWT = require("../middleware/auth.middleware");
 const authorizeRoles = require("../middleware/role.middleware");
 const validate = require("../middleware/validate.middleware");
@@ -9,6 +10,7 @@ const upload = require("../middleware/upload.middleware");
 const {
   updateDoctorSchema, consultationFeeSchema, availabilitySchema, unavailableDateSchema,
 } = require("../validators/doctor.validator");
+const { reportSchema } = require("../validators/complaint.validator");
 
 const router = express.Router();
 
@@ -42,7 +44,9 @@ privateRouter.get("/dashboard", doctorController.getDashboard);
 privateRouter.get("/patients", doctorController.getMyPatients);
 privateRouter.get("/patients/:patientId", doctorController.getPatientHistory);
 privateRouter.get("/patients/:patientId/dashboard", doctorController.getPatientDashboardForDoctor);
+privateRouter.post("/patients/:patientId/report", validate(reportSchema), complaintController.reportPatient);
 
 privateRouter.get("/reviews", doctorController.getMyReviews);
+privateRouter.get("/my-reports", complaintController.getMyReports);
 
 module.exports = { publicRouter, privateRouter };
