@@ -11,6 +11,7 @@ const patientSchema = new mongoose.Schema(
     height: { type: Number }, // cm
     weight: { type: Number }, // kg
     favoriteDoctors: [{ type: mongoose.Schema.Types.ObjectId, ref: "Doctor" }],
+    blockedDoctors: [{ type: mongoose.Schema.Types.ObjectId, ref: "Doctor" }],
   },
   { timestamps: true }
 );
