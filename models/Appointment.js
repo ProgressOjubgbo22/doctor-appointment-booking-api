@@ -31,6 +31,8 @@ const appointmentSchema = new mongoose.Schema(
       enum: ["patient", "doctor", "admin"],
       default: "patient",
     },
+    isFollowUp: { type: Boolean, default: false },
+    parentAppointmentId: { type: mongoose.Schema.Types.ObjectId, ref: "Appointment" },
   },
   { timestamps: true }
 );
