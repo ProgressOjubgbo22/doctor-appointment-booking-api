@@ -15,6 +15,7 @@ const Review = require("../models/Review");
 const asyncHandler = require("../utils/asyncHandler");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
+const createAuditLog = require("../utils/createAuditLog");
 const { uploadToCloudinary } = require("../config/cloudinary");
 
 const getPatientOr404 = async (userId) => {
@@ -290,6 +291,70 @@ const removeFavoriteDoctor = asyncHandler(async (req, res) => {
   return res.status(StatusCodes.OK).json(new ApiResponse(200, null, "Doctor removed from favorites."));
 });
 
+// ---- Blocking ----
+// A patient who had a bad experience can block a doctor so future booking
+// attempts with that doctor are rejected. Blocking doesn't touch past
+// appointments/records and doesn't notify the doctor - it's a one-sided
+// safety control, not a dispute mechanism (use reportDoctor for that).
+
+// POST /api/patients/doctors/:doctorId/block
+const blockDoctor = asyncHandler(async (req, res) => {
+  const patient = await getPatientOr404(req.user._id);
+  const doctor = await Doctor.findById(req.params.doctorId);
+  if (!doctor) throw new ApiError(404, "Doctor not found.");
+
+  if (patient.blockedDoctors.some((id) => String(id) === String(doctor._id))) {
+    throw new ApiError(409, "You have already blocked this doctor.");
+  }
+
+  patient.blockedDoctors.push(doctor._id);
+  patient.favoriteDoctors = patient.favoriteDoctors.filter((id) => String(id) !== String(doctor._id));
+  await patient.save();
+
+  await createAuditLog({
+    req,
+    action: "block",
+    entityName: "Doctor",
+    entityId: doctor._id,
+    description: "Patient blocked a doctor.",
+  });
+
+  return res
+    .status(StatusCodes.OK)
+    .json(new ApiResponse(200, null, "Doctor blocked. You won't be able to book with them again unless you unblock them."));
+});
+
+// DELETE /api/patients/doctors/:doctorId/block
+const unblockDoctor = asyncHandler(async (req, res) => {
+  const patient = await getPatientOr404(req.user._id);
+  patient.blockedDoctors = patient.blockedDoctors.filter((id) => String(id) !== String(req.params.doctorId));
+  await patient.save();
+
+  await createAuditLog({
+    req,
+    action: "unblock",
+    entityName: "Doctor",
+    entityId: req.params.doctorId,
+    description: "Patient unblocked a doctor.",
+  });
+
+  return res.status(StatusCodes.OK).json(new ApiResponse(200, null, "Doctor unblocked."));
+});
+
+// GET /api/patients/blocked-doctors
+const getBlockedDoctors = asyncHandler(async (req, res) => {
+  const patient = await Patient.findOne({ userId: req.user._id }).populate({
+    path: "blockedDoctors",
+    populate: [
+      { path: "userId", select: "firstName lastName profilePicture" },
+      { path: "specialtyId", select: "name" },
+    ],
+  });
+  if (!patient) throw new ApiError(404, "Patient profile not found.");
+
+  return res.status(StatusCodes.OK).json(new ApiResponse(200, patient.blockedDoctors, "Blocked doctors fetched."));
+});
+
 // ---- Doctor history (patient viewing their own history with a doctor) ----
 
 // GET /api/patients/doctors/:doctorId/history
@@ -341,5 +406,8 @@ module.exports = {
   deleteAddress,
   addFavoriteDoctor,
   removeFavoriteDoctor,
+  blockDoctor,
+  unblockDoctor,
+  getBlockedDoctors,
   getDoctorHistory,
 };
