@@ -1,45 +1,58 @@
 const express = require("express");
 
-const patientController = require("../controllers/patient.controller");
-const { uploadPatientReport } = require("../controllers/medicalRecord.controller");
-
+const adminController = require("../controllers/admin.controller");
+const complaintController = require("../controllers/complaint.controller");
 const verifyJWT = require("../middleware/auth.middleware");
 const authorizeRoles = require("../middleware/role.middleware");
 const validate = require("../middleware/validate.middleware");
-const upload = require("../middleware/upload.middleware");
 
-const { updatePatientSchema, emergencyContactSchema, addressSchema, updateEmergencyContactSchema, updateAddressSchema } = require("../validators/patient.validator");
+const {
+  createDoctorSchema, suspendSchema, announcementSchema,
+  adminCreateAppointmentSchema, reassignAppointmentSchema,
+} = require("../validators/admin.validator");
+const { rescheduleAppointmentSchema } = require("../validators/appointment.validator");
+const { updateComplaintStatusSchema } = require("../validators/complaint.validator");
 
 const router = express.Router();
+router.use(verifyJWT, authorizeRoles("admin"));
 
-router.use(verifyJWT, authorizeRoles("patient"));
+router.get("/dashboard", adminController.getDashboard);
 
-router.get("/profile", patientController.getProfile);
-router.patch("/profile", validate(updatePatientSchema), patientController.updateProfile);
-router.delete("/profile", patientController.deleteAccount);
-router.post("/profile-picture", upload.single("image"), patientController.uploadProfilePicture);
+// // Patients
+router.get("/patients", adminController.getPatients);
+router.get("/patients/:id", adminController.getPatientById);
+router.patch("/patients/:id", adminController.updatePatient);
+router.patch("/patients/:id/suspend", validate(suspendSchema), adminController.suspendPatient);
+router.patch("/patients/:id/deactivate", adminController.deactivatePatient);
+router.patch("/patients/:id/activate", adminController.activatePatient);
+router.get("/patients/:id/dashboard", adminController.getPatientDashboardAdmin);
 
-router.get("/dashboard", patientController.getDashboard);
-router.get("/medical-records", patientController.getMedicalRecords);
-router.post("/reports", upload.single("file"), uploadPatientReport);
-router.get("/prescriptions", patientController.getPrescriptions);
+// // Doctors
+router.post("/doctors", validate(createDoctorSchema), adminController.createDoctor);
+router.get("/doctors", adminController.getDoctors);
+router.get("/doctors/:id", adminController.getDoctorByIdAdmin);
+router.get("/doctors/:id/performance", adminController.getDoctorPerformance);
+router.patch("/doctors/:id", adminController.updateDoctorAdmin);
+router.patch("/doctors/:id/approve", adminController.approveDoctor);
+router.patch("/doctors/:id/verify", adminController.verifyDoctor);
+router.patch("/doctors/:id/suspend", validate(suspendSchema), adminController.suspendDoctor);
+router.patch("/doctors/:id/activate", adminController.activateDoctor);
+router.delete("/doctors/:id", adminController.deleteDoctor);
 
-router.get("/appointments", patientController.getAppointments);
-router.get("/upcoming-appointments", patientController.getUpcomingAppointments);
+// // Appointments
+router.get("/appointments", adminController.getAllAppointments);
+router.post("/appointments", validate(adminCreateAppointmentSchema), adminController.createAppointmentAdmin);
+router.patch("/appointments/:id", adminController.updateAppointmentAdmin);
+router.patch("/appointments/:id/cancel", adminController.cancelAppointmentAdmin);
+router.patch("/appointments/:id/reschedule", validate(rescheduleAppointmentSchema), adminController.rescheduleAppointmentAdmin);
+router.patch("/appointments/:id/reassign", validate(reassignAppointmentSchema), adminController.reassignAppointment);
 
-router.post("/emergency-contacts", validate(emergencyContactSchema), patientController.addEmergencyContact);
-router.get("/emergency-contacts", patientController.getEmergencyContacts);
-router.patch("/emergency-contacts/:id", validate(updateEmergencyContactSchema), patientController.updateEmergencyContact);
-router.delete("/emergency-contacts/:id", patientController.deleteEmergencyContact);
+// // Announcements
+router.post("/notifications", validate(announcementSchema), adminController.sendAnnouncement);
 
-router.post("/addresses", validate(addressSchema), patientController.addAddress);
-router.get("/addresses", patientController.getAddresses);
-router.patch("/addresses/:id", validate(updateAddressSchema), patientController.updateAddress);
-router.delete("/addresses/:id", patientController.deleteAddress);
-
-router.post("/favorites/:doctorId", patientController.addFavoriteDoctor);
-router.delete("/favorites/:doctorId", patientController.removeFavoriteDoctor);
-
-router.get("/doctors/:doctorId/history", patientController.getDoctorHistory);
+// Reports (patient/doctor complaints against each other)
+router.get("/reports", complaintController.getAllComplaints);
+router.get("/reports/:id", complaintController.getComplaintById);
+router.patch("/reports/:id", validate(updateComplaintStatusSchema), complaintController.updateComplaintStatus);
 
 module.exports = router;
