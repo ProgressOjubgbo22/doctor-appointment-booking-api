@@ -7,6 +7,7 @@ const Patient = require("../models/Patient");
 const Availability = require("../models/Availability");
 const UnavailableDate = require("../models/UnavailableDate");
 const Payment = require("../models/Payment");
+const MedicalRecord = require("../models/MedicalRecord");
 
 const asyncHandler = require("../utils/asyncHandler");
 const ApiError = require("../utils/ApiError");
@@ -62,6 +63,10 @@ const createAppointment = asyncHandler(async (req, res) => {
   const doctor = await Doctor.findById(doctorId);
   if (!doctor) throw new ApiError(404, "Doctor not found.");
   if (doctor.verificationStatus !== "verified") throw new ApiError(400, "This doctor is not currently accepting appointments.");
+
+  if (patient.blockedDoctors.some((id) => String(id) === String(doctor._id))) {
+      throw new ApiError(403, "You have blocked this doctor and can't book with them. Unblock them first if you'd like to book again.");
+  }
 
   if (dayjs(appointmentDate).isBefore(dayjs().startOf("day"))) {
     throw new ApiError(400, "Cannot book an appointment in the past.");
@@ -445,6 +450,136 @@ const markNoShow = asyncHandler(async (req, res) => {
   return res.status(StatusCodes.OK).json(new ApiResponse(200, appointment, "Appointment marked as no-show."));
 });
 
+// POST /api/appointments/:id/follow-up
+// :id is the ORIGINAL (parent) appointment. Either the patient or the
+// doctor from that appointment can book the follow-up - a doctor
+// scheduling it on the spot (e.g. "come back in 2 weeks") should be able
+// to confirm it immediately, while a patient booking off a recommendation
+// goes through the normal pending -> accept flow like any other booking.
+const createFollowUpAppointment = asyncHandler(async (req, res) => {
+  const { appointmentDate, startTime, endTime, reasonForVisit, paymentMethod } = req.body;
+
+  const parentAppointment = await Appointment.findById(req.params.id);
+  if (!parentAppointment) throw new ApiError(404, "Original appointment not found.");
+
+  if (parentAppointment.status !== "completed") {
+    throw new ApiError(400, "Follow-ups can only be booked for completed appointments.");
+  }
+
+  let bookedByRole;
+  if (req.user.role === "patient") {
+    const patient = await Patient.findOne({ userId: req.user._id });
+    if (String(parentAppointment.patientId) !== String(patient._id)) throw new ApiError(403, "Not your appointment.");
+    if (patient.blockedDoctors.some((id) => String(id) === String(parentAppointment.doctorId))) {
+      throw new ApiError(403, "You have blocked this doctor and can't book a follow-up with them.");
+    }
+    bookedByRole = "patient";
+  } else if (req.user.role === "doctor") {
+    const doctor = await Doctor.findOne({ userId: req.user._id });
+    if (String(parentAppointment.doctorId) !== String(doctor._id)) throw new ApiError(403, "Not your appointment.");
+    bookedByRole = "doctor";
+  } else {
+    throw new ApiError(403, "Only the patient or doctor from the original appointment can book a follow-up.");
+  }
+
+  // Don't let follow-ups pile up silently - if one is already pending/
+  // confirmed against this parent, point them at rescheduling it instead.
+  const existingFollowUp = await Appointment.findOne({
+    parentAppointmentId: parentAppointment._id,
+    status: { $in: ["pending", "confirmed"] },
+  });
+  if (existingFollowUp) {
+    throw new ApiError(409, "A follow-up for this appointment is already booked. Reschedule that one instead of booking another.");
+  }
+
+  if (dayjs(appointmentDate).isBefore(dayjs().startOf("day"))) {
+    throw new ApiError(400, "Cannot book an appointment in the past.");
+  }
+
+  await assertSlotIsBookable({ doctorId: parentAppointment.doctorId, appointmentDate, startTime, endTime });
+
+  const doctor = await Doctor.findById(parentAppointment.doctorId);
+
+  const followUp = await Appointment.create({
+    patientId: parentAppointment.patientId,
+    doctorId: parentAppointment.doctorId,
+    appointmentDate,
+    startTime,
+    endTime,
+    reasonForVisit: reasonForVisit || "Follow-up appointment",
+    status: bookedByRole === "doctor" ? "confirmed" : "pending",
+    createdBy: bookedByRole,
+    isFollowUp: true,
+    parentAppointmentId: parentAppointment._id,
+  });
+
+  const payment = await Payment.create({
+    appointmentId: followUp._id,
+    patientId: parentAppointment.patientId,
+    doctorId: parentAppointment.doctorId,
+    amount: doctor.consultationFee,
+    paymentMethod: paymentMethod || "cash",
+    paymentStatus: "pending",
+  });
+
+  const patient = await Patient.findById(parentAppointment.patientId);
+  const notifyMessage = `A follow-up appointment has been ${bookedByRole === "doctor" ? "scheduled" : "requested"} for ${appointmentDate} at ${startTime}.`;
+
+  await createNotification({
+    userId: bookedByRole === "doctor" ? patient.userId : doctor.userId,
+    title: bookedByRole === "doctor" ? "Follow-up appointment scheduled" : "Follow-up requested",
+    message: notifyMessage,
+    type: bookedByRole === "doctor" ? "appointment_confirmation" : "new_appointment",
+  });
+
+  await createAuditLog({
+    req,
+    action: "create_follow_up",
+    entityName: "Appointment",
+    entityId: followUp._id,
+    description: `${bookedByRole} booked a follow-up to appointment ${parentAppointment._id}.`,
+  });
+
+  const populated = await Appointment.findById(followUp._id).populate(appointmentPopulateOptions);
+
+  return res
+    .status(StatusCodes.CREATED)
+    .json(new ApiResponse(201, { appointment: populated, payment }, "Follow-up appointment booked."));
+});
+
+// GET /api/appointments/:id/follow-ups
+// Lists every follow-up appointment ever booked against this one (usually
+// zero or one, but nothing stops a patient from having been rescheduled/
+// cancelled and rebooked more than once over time).
+const getFollowUps = asyncHandler(async (req, res) => {
+  const parentAppointment = await Appointment.findById(req.params.id);
+  if (!parentAppointment) throw new ApiError(404, "Appointment not found.");
+
+  if (req.user.role === "patient") {
+    const patient = await Patient.findOne({ userId: req.user._id });
+    if (String(parentAppointment.patientId) !== String(patient._id)) throw new ApiError(403, "Not your appointment.");
+  } else if (req.user.role === "doctor") {
+    const doctor = await Doctor.findOne({ userId: req.user._id });
+    if (String(parentAppointment.doctorId) !== String(doctor._id)) throw new ApiError(403, "Not your appointment.");
+  }
+
+  const followUps = await Appointment.find({ parentAppointmentId: parentAppointment._id })
+    .populate(appointmentPopulateOptions)
+    .sort({ createdAt: -1 });
+
+  // Surface the doctor's recommended follow-up date (if they left one on
+  // the medical record) so the client can pre-fill a suggested date.
+  const medicalRecord = await MedicalRecord.findOne({ appointmentId: parentAppointment._id }).select("followUpDate");
+
+  return res.status(StatusCodes.OK).json(
+    new ApiResponse(
+      200,
+      { followUps, recommendedFollowUpDate: medicalRecord?.followUpDate || null },
+      "Follow-up appointments fetched."
+    )
+  );
+});
+
 module.exports = {
   createAppointment,
   getAppointments,
@@ -456,5 +591,7 @@ module.exports = {
   checkInAppointment,
   completeAppointment,
   markNoShow,
+  createFollowUpAppointment,
+  getFollowUps,
   assertSlotIsBookable,
 };
