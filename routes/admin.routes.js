@@ -1,6 +1,7 @@
 const express = require("express");
 
 const adminController = require("../controllers/admin.controller");
+const complaintController = require("../controllers/complaint.controller");
 const verifyJWT = require("../middleware/auth.middleware");
 const authorizeRoles = require("../middleware/role.middleware");
 const validate = require("../middleware/validate.middleware");
@@ -10,6 +11,7 @@ const {
   adminCreateAppointmentSchema, reassignAppointmentSchema,
 } = require("../validators/admin.validator");
 const { rescheduleAppointmentSchema } = require("../validators/appointment.validator");
+const { updateComplaintStatusSchema } = require("../validators/complaint.validator");
 
 const router = express.Router();
 router.use(verifyJWT, authorizeRoles("admin"));
@@ -47,5 +49,10 @@ router.patch("/appointments/:id/reassign", validate(reassignAppointmentSchema), 
 
 // // Announcements
 router.post("/notifications", validate(announcementSchema), adminController.sendAnnouncement);
+
+// Reports (patient/doctor complaints against each other)
+router.get("/reports", complaintController.getAllComplaints);
+router.get("/reports/:id", complaintController.getComplaintById);
+router.patch("/reports/:id", validate(updateComplaintStatusSchema), complaintController.updateComplaintStatus);
 
 module.exports = router;
