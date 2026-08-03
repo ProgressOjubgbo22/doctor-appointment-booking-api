@@ -13,6 +13,8 @@ const specialtyRoutes = require("./specialty.routes");
 const reportRoutes = require("./report.routes");
 const auditRoutes = require("./audit.routes");
 const adminRoutes = require("./admin.routes");
+const supportRoutes = require("./support.routes");
+const chatRoutes = require("./chat.routes");
 
 const router = express.Router();
 
@@ -30,5 +32,7 @@ router.use("/specialties", specialtyRoutes);
 router.use("/reports", reportRoutes);
 router.use("/audit-logs", auditRoutes);
 router.use("/admin", adminRoutes);
+router.use("/support", supportRoutes); 
+router.use("/chat", chatRoutes);
 
 module.exports = router;
