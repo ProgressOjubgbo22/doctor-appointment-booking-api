@@ -2,6 +2,7 @@ const express = require("express");
 
 const adminController = require("../controllers/admin.controller");
 const complaintController = require("../controllers/complaint.controller");
+const supportController = require("../controllers/support.controller");
 const verifyJWT = require("../middleware/auth.middleware");
 const authorizeRoles = require("../middleware/role.middleware");
 const validate = require("../middleware/validate.middleware");
@@ -12,6 +13,7 @@ const {
 } = require("../validators/admin.validator");
 const { rescheduleAppointmentSchema } = require("../validators/appointment.validator");
 const { updateComplaintStatusSchema } = require("../validators/complaint.validator");
+const { updateTicketSchema } = require("../validators/support.validator");
 
 const router = express.Router();
 router.use(verifyJWT, authorizeRoles("admin"));
@@ -54,5 +56,9 @@ router.post("/notifications", validate(announcementSchema), adminController.send
 router.get("/reports", complaintController.getAllComplaints);
 router.get("/reports/:id", complaintController.getComplaintById);
 router.patch("/reports/:id", validate(updateComplaintStatusSchema), complaintController.updateComplaintStatus);
+
+// Support tickets (help center)
+router.get("/support/tickets", supportController.getAllTickets);
+router.patch("/support/tickets/:id", validate(updateTicketSchema), supportController.updateTicketAdmin);
 
 module.exports = router;
