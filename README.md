@@ -4,6 +4,12 @@ A full-featured Node.js / Express / MongoDB backend for a hospital doctor
 appointment booking platform, supporting three roles: **Patient**, **Doctor**,
 and **Admin**.
 
+## 🌐 Live API
+
+The API is deployed on Render and accessible at:
+
+https://ecommerce-backend-mv3y.onrender.com
+
 ## Features
 
 - **Auth**: register, login, logout, JWT access + refresh tokens (rotated on
