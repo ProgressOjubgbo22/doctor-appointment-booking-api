@@ -8,7 +8,7 @@ and **Admin**.
 
 The API is deployed on Render and accessible at:
 
-https://ecommerce-backend-mv3y.onrender.com
+https://doctor-appointment-booking-api-to9u.onrender.com
 
 ## Features
 
