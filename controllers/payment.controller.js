@@ -221,6 +221,78 @@ const getInvoice = asyncHandler(async (req, res) => {
   });
 });
 
+// ---- Stripe webhook (called by Stripe, not by the client) ----
+
+/**
+ * Marks a payment as paid (idempotent) and, if the linked appointment is
+ * still pending, auto-confirms it now that payment has cleared. Also
+ * notifies the patient and writes an audit log entry.
+ */
+const markPaymentPaidFromWebhook = async (payment, eventType) => {
+  if (payment.paymentStatus === "paid") return; // already processed - avoid duplicate side effects
+
+  payment.paymentStatus = "paid";
+  payment.paidAt = new Date();
+  await payment.save();
+
+  const appointment = await Appointment.findById(payment.appointmentId);
+  if (appointment && appointment.status === "pending") {
+    appointment.status = "confirmed";
+    await appointment.save();
+  }
+
+  const patient = await Patient.findById(payment.patientId);
+  if (patient) {
+    await createNotification({
+      userId: patient.userId,
+      title: "Payment confirmed",
+      message: `Your payment of $${payment.amount} has been confirmed.`,
+      type: "payment_confirmation",
+    });
+  }
+
+  await createAuditLog({
+    req: {},
+    action: "webhook_payment_succeeded",
+    entityName: "Payment",
+    entityId: payment._id,
+    description: `Stripe webhook (${eventType}) marked payment as paid.`,
+  });
+};
+
+const markPaymentFailedFromWebhook = async (payment, eventType) => {
+  if (payment.paymentStatus === "paid") return; // never downgrade an already-paid record
+
+  payment.paymentStatus = "failed";
+  await payment.save();
+
+  const patient = await Patient.findById(payment.patientId);
+  if (patient) {
+    await createNotification({
+      userId: patient.userId,
+      title: "Payment failed",
+      message: `Your payment attempt of $${payment.amount} did not go through. Please try again.`,
+      type: "payment_confirmation",
+    });
+  }
+
+  await createAuditLog({
+    req: {},
+    action: "webhook_payment_failed",
+    entityName: "Payment",
+    entityId: payment._id,
+    description: `Stripe webhook (${eventType}) marked payment as failed.`,
+  });
+};
+
+const findPaymentForSession = async (session) => {
+  if (session.metadata?.paymentId) {
+    const byId = await Payment.findById(session.metadata.paymentId);
+    if (byId) return byId;
+  }
+  return Payment.findOne({ paymentIntentId: session.id });
+};
+
 /**
  * POST /api/payments/webhook
  *
