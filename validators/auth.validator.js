@@ -35,6 +35,19 @@ const acceptInvitationSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
+const twoFactorTokenSchema = z.object({
+  token: z.string().length(6, "Authentication code must be 6 digits"),
+});
+
+const twoFactorLoginSchema = z.object({
+  challengeToken: z.string().min(1, "challengeToken is required"),
+  token: z.string().length(6, "Authentication code must be 6 digits"),
+});
+
+const twoFactorDisableSchema = z.object({
+  password: z.string().min(1, "Password is required"),
+});
+
 module.exports = {
   registerSchema,
   loginSchema,
@@ -43,4 +56,7 @@ module.exports = {
   changePasswordSchema,
   resendVerificationSchema,
   acceptInvitationSchema,
+  twoFactorTokenSchema,
+  twoFactorLoginSchema,
+  twoFactorDisableSchema,
 };

@@ -1,6 +1,8 @@
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const dayjs = require("dayjs");
+const speakeasy = require("speakeasy");
+const qrcode = require("qrcode");
 const { StatusCodes } = require("http-status-codes");
 
 const User = require("../models/User");
@@ -14,6 +16,19 @@ const ApiResponse = require("../utils/ApiResponse");
 const sendEmail = require("../utils/sendEmail");
 const createAuditLog = require("../utils/createAuditLog");
 const { generateAccessToken, generateRefreshToken } = require("../utils/generateTokens");
+
+// Short-lived token proving "this request already supplied a correct
+// password for this user" - issued by login() when 2FA is enabled, and
+// required by verifyTwoFactorLogin() below to complete the sign-in. Kept
+// separate from the access/refresh secrets so a leaked challenge token
+// can't be replayed as a real session token (and vice versa).
+const TWO_FACTOR_CHALLENGE_SECRET = process.env.JWT_2FA_SECRET || process.env.JWT_ACCESS_SECRET;
+const TWO_FACTOR_CHALLENGE_EXPIRES_IN = "5m";
+
+const issueTwoFactorChallenge = (user) =>
+  jwt.sign({ userId: user._id, purpose: "2fa_challenge" }, TWO_FACTOR_CHALLENGE_SECRET, {
+    expiresIn: TWO_FACTOR_CHALLENGE_EXPIRES_IN,
+  });
 
 const cookieOptions = {
   httpOnly: true,
@@ -86,6 +101,10 @@ const login = asyncHandler(async (req, res) => {
      throw new ApiError(401, "Invalid email or password.");
    }
 
+  if (user.authProvider === "google" && !user.password) {
+    throw new ApiError(400, "This account signs in with Google. Please use \"Sign in with Google\" instead.");
+  }
+
   const isPasswordValid = await user.comparePassword(password);
   if (!isPasswordValid) {
      await createAuditLog({
@@ -106,6 +125,16 @@ const login = asyncHandler(async (req, res) => {
   }
   if (!user.isEmailVerified && user.role !== "admin") {
     throw new ApiError(403, "Please verify your email before logging in.");
+  }
+
+  // Password was correct, but if 2FA is enabled we stop short of issuing
+  // real session tokens - the client must call POST /api/auth/2fa/login
+  // with a valid TOTP code and this challenge token to finish logging in.
+  if (user.twoFactorEnabled) {
+    const challengeToken = issueTwoFactorChallenge(user);
+    return res
+      .status(StatusCodes.OK)
+      .json(new ApiResponse(200, { twoFactorRequired: true, challengeToken }, "Enter your two-factor authentication code to continue."));
   }
 
   user.lastLogin = new Date();
@@ -366,6 +395,177 @@ const getMe = asyncHandler(async (req, res) => {
   return res.status(StatusCodes.OK).json(new ApiResponse(200, req.user, "Current user fetched."));
 });
 
+// ---------------------------------------------------------------------------
+// Two-factor authentication (TOTP via speakeasy + qrcode)
+// ---------------------------------------------------------------------------
+
+// POST /api/auth/2fa/setup  (authenticated)
+// Generates a new TOTP secret and returns it as a scannable QR code. The
+// secret is stashed as "pending" (twoFactorTempSecret) - it only becomes
+// the account's real secret once the user proves they scanned it correctly
+// via POST /api/auth/2fa/verify, so a setup request that's abandoned
+// halfway through can never silently enable 2FA with a secret the user
+// never actually saved in their authenticator app.
+const setupTwoFactor = asyncHandler(async (req, res) => {
+  if (req.user.twoFactorEnabled) {
+    throw new ApiError(400, "Two-factor authentication is already enabled on this account.");
+  }
+
+  const secret = speakeasy.generateSecret({
+    name: `City Care Hospital (${req.user.email})`,
+  });
+
+  await User.findByIdAndUpdate(req.user._id, { twoFactorTempSecret: secret.base32 });
+
+  const qrCodeDataUrl = await qrcode.toDataURL(secret.otpauth_url);
+
+  return res.status(StatusCodes.OK).json(
+    new ApiResponse(
+      200,
+      { secret: secret.base32, qrCode: qrCodeDataUrl },
+      "Scan this QR code with your authenticator app, then confirm with a code to enable 2FA."
+    )
+  );
+});
+
+// POST /api/auth/2fa/verify  (authenticated) - body: { token }
+// Confirms the pending secret from setupTwoFactor() by checking a code
+// generated from it, then promotes it to the account's active secret.
+const verifyTwoFactorSetup = asyncHandler(async (req, res) => {
+  const { token } = req.body;
+
+  const user = await User.findById(req.user._id).select("+twoFactorTempSecret");
+  if (!user.twoFactorTempSecret) {
+    throw new ApiError(400, "No pending 2FA setup found. Call /2fa/setup first.");
+  }
+
+  const isValid = speakeasy.totp.verify({
+    secret: user.twoFactorTempSecret,
+    encoding: "base32",
+    token,
+    window: 1, // allow one 30s step of clock drift
+  });
+  if (!isValid) throw new ApiError(400, "Invalid authentication code. Please try again.");
+
+  user.twoFactorSecret = user.twoFactorTempSecret;
+  user.twoFactorTempSecret = undefined;
+  user.twoFactorEnabled = true;
+  await user.save();
+
+  await createAuditLog({ req, action: "enable_2fa", entityName: "User", entityId: user._id, description: "User enabled two-factor authentication." });
+
+  return res.status(StatusCodes.OK).json(new ApiResponse(200, null, "Two-factor authentication enabled."));
+});
+
+// POST /api/auth/2fa/disable  (authenticated) - body: { password }
+// Requires the account password again as a safeguard against a hijacked,
+// already-logged-in session silently turning 2FA off.
+const disableTwoFactor = asyncHandler(async (req, res) => {
+  const { password } = req.body;
+
+  const user = await User.findById(req.user._id).select("+password");
+  const isPasswordValid = await user.comparePassword(password);
+  if (!isPasswordValid) throw new ApiError(401, "Incorrect password.");
+
+  user.twoFactorEnabled = false;
+  user.twoFactorSecret = undefined;
+  user.twoFactorTempSecret = undefined;
+  await user.save();
+
+  await createAuditLog({ req, action: "disable_2fa", entityName: "User", entityId: user._id, description: "User disabled two-factor authentication." });
+
+  return res.status(StatusCodes.OK).json(new ApiResponse(200, null, "Two-factor authentication disabled."));
+});
+
+// POST /api/auth/2fa/login  (public) - body: { challengeToken, token }
+// Completes the login flow started in login() above once 2FA was required:
+// validates the short-lived challenge token plus a live TOTP code, then
+// issues the normal access/refresh tokens exactly like a non-2FA login.
+const verifyTwoFactorLogin = asyncHandler(async (req, res) => {
+  const { challengeToken, token } = req.body;
+  if (!challengeToken || !token) throw new ApiError(400, "challengeToken and token are required.");
+
+  let decoded;
+  try {
+    decoded = jwt.verify(challengeToken, TWO_FACTOR_CHALLENGE_SECRET);
+  } catch (error) {
+    throw new ApiError(401, "Invalid or expired two-factor challenge. Please log in again.");
+  }
+  if (decoded.purpose !== "2fa_challenge") throw new ApiError(401, "Invalid challenge token.");
+
+  const user = await User.findById(decoded.userId).select("+twoFactorSecret");
+  if (!user || !user.twoFactorEnabled) throw new ApiError(401, "Two-factor authentication is not enabled for this account.");
+
+  const isValid = speakeasy.totp.verify({
+    secret: user.twoFactorSecret,
+    encoding: "base32",
+    token,
+    window: 1,
+  });
+  if (!isValid) {
+    await createAuditLog({
+      req: { user, ip: req.ip, headers: req.headers },
+      action: "login_failed",
+      entityName: "User",
+      entityId: user._id,
+      description: "Incorrect two-factor authentication code.",
+    });
+    throw new ApiError(401, "Invalid authentication code.");
+  }
+
+  user.lastLogin = new Date();
+  await user.save();
+
+  const { accessToken, refreshToken } = await issueTokens(user, res);
+
+  await createAuditLog({
+    req: { user, ip: req.ip, headers: req.headers },
+    action: "login",
+    entityName: "User",
+    entityId: user._id,
+    description: `${user.role} logged in successfully (2FA).`,
+  });
+
+  const userSafe = user.toObject();
+  delete userSafe.password;
+  delete userSafe.twoFactorSecret;
+
+  return res.status(StatusCodes.OK).json(new ApiResponse(200, { user: userSafe, accessToken, refreshToken }, "Login successful."));
+});
+
+// ---------------------------------------------------------------------------
+// Google OAuth (passport-google-oauth20)
+// ---------------------------------------------------------------------------
+
+// GET /api/auth/google/callback
+// Runs *after* passport's GoogleStrategy (config/passport.js) has already
+// found-or-created the User and attached it to req.user. From here we just
+// reuse the exact same issueTokens() helper every other login path uses, so
+// the resulting session is indistinguishable from a normal login.
+const googleAuthCallback = asyncHandler(async (req, res) => {
+  const user = req.user; // set by passport.authenticate("google", { session: false })
+  if (!user) throw new ApiError(401, "Google authentication failed.");
+
+  user.lastLogin = new Date();
+  await user.save();
+
+  const { accessToken, refreshToken } = await issueTokens(user, res);
+
+  await createAuditLog({
+    req: { user, ip: req.ip, headers: req.headers },
+    action: "login",
+    entityName: "User",
+    entityId: user._id,
+    description: "User logged in via Google OAuth.",
+  });
+
+  // Hand off to the SPA with tokens in the query string (also already set as
+  // httpOnly cookies above via issueTokens/res.cookie) so the frontend can
+  // finish the redirect flow without needing a page that reads cookies.
+  const redirectUrl = `${process.env.CLIENT_URL}/oauth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}`;
+  return res.redirect(redirectUrl);
+});
+
 module.exports = {
   register,
   login,
@@ -378,4 +578,9 @@ module.exports = {
   acceptDoctorInvitation,
   changePassword,
   getMe,
+  setupTwoFactor,
+  verifyTwoFactorSetup,
+  disableTwoFactor,
+  verifyTwoFactorLogin,
+  googleAuthCallback,
 };

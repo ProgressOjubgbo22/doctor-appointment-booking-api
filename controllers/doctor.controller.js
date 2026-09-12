@@ -18,6 +18,18 @@ const ApiResponse = require("../utils/ApiResponse");
 const generateSlots = require("../utils/generateSlots");
 const createAuditLog = require("../utils/createAuditLog");
 const { uploadToCloudinary } = require("../config/cloudinary");
+const { withCache, deleteCache } = require("../utils/cache");
+
+const DOCTOR_CACHE_TTL_SECONDS = 60;
+// Invalidated (both individually and via the wildcard list pattern) any
+// time a doctor's public-facing data changes - see invalidateDoctorCache().
+const doctorListCacheKey = (query) => `cache:doctors:list:${JSON.stringify(query)}`;
+const doctorByIdCacheKey = (id) => `cache:doctors:byId:${id}`;
+
+const invalidateDoctorCache = async (doctorId) => {
+  await deleteCache("cache:doctors:list:*");
+  if (doctorId) await deleteCache(doctorByIdCacheKey(doctorId));
+};
 
 const getDoctorOr404 = async (userId) => {
   const doctor = await Doctor.findOne({ userId });
@@ -31,6 +43,11 @@ const getDoctorOr404 = async (userId) => {
 const listDoctors = asyncHandler(async (req, res) => {
   const { specialty, minFee, maxFee, minRating, search, page = 1, limit = 10 } = req.query;
 
+  // Cache-aside: this is a public, read-heavy, filter-driven listing that
+  // rarely changes between requests, so short-TTL caching cuts DB load
+  // substantially. Cache key includes every query param so different
+  // filters/pages never collide.
+  const { data: responseData } = await withCache(doctorListCacheKey(req.query), DOCTOR_CACHE_TTL_SECONDS, async () => { 
   const filter = { verificationStatus: "verified" };
   if (specialty) filter.specialtyId = specialty;
   if (minRating) filter.averageRating = { $gte: Number(minRating) };
@@ -62,9 +79,10 @@ const listDoctors = asyncHandler(async (req, res) => {
 
   const total = await Doctor.countDocuments(filter);
 
-  return res
-    .status(StatusCodes.OK)
-    .json(new ApiResponse(200, { doctors: filtered, total, page: Number(page), pages: Math.ceil(total / limit) }, "Doctors fetched."));
+    return { doctors: filtered, total, page: Number(page), pages: Math.ceil(total / limit) };
+  });
+
+  return res.status(StatusCodes.OK).json(new ApiResponse(200, { doctors: filtered, total, page: Number(page), pages: Math.ceil(total / limit) }, "Doctors fetched."));
 });
 
 // GET /api/doctors/search
@@ -72,10 +90,13 @@ const searchDoctors = listDoctors; // same underlying logic; kept as separate ro
 
 // GET /api/doctors/:id
 const getDoctorById = asyncHandler(async (req, res) => {
-  const doctor = await Doctor.findById(req.params.id)
+  const { data: doctor } = await withCache(doctorByIdCacheKey(req.params.id), DOCTOR_CACHE_TTL_SECONDS, async () => {
+  const found = await Doctor.findById(req.params.id)
     .populate("userId", "firstName lastName profilePicture phoneNumber")
     .populate("specialtyId", "name description");
-  if (!doctor) throw new ApiError(404, "Doctor not found.");
+   if (!found) throw new ApiError(404, "Doctor not found.");
+   return found;
+  });
 
   return res.status(StatusCodes.OK).json(new ApiResponse(200, doctor, "Doctor profile fetched."));
 });
@@ -173,6 +194,8 @@ const updateMyProfile = asyncHandler(async (req, res) => {
 
   if (!doctor) throw new ApiError(404, "Doctor profile not found.");
 
+  await invalidateDoctorCache(doctor._id);
+  
   return res.status(StatusCodes.OK).json(new ApiResponse(200, doctor, "Profile updated."));
 });
 
@@ -185,6 +208,8 @@ const updateConsultationFee = asyncHandler(async (req, res) => {
   );
   if (!doctor) throw new ApiError(404, "Doctor profile not found.");
 
+  await invalidateDoctorCache(doctor._id);
+
   return res.status(StatusCodes.OK).json(new ApiResponse(200, { consultationFee: doctor.consultationFee }, "Consultation fee updated."));
 });
 
@@ -194,6 +219,9 @@ const uploadProfilePicture = asyncHandler(async (req, res) => {
 
   const result = await uploadToCloudinary(req.file.buffer, "hospital-system/profile-pictures");
   const user = await User.findByIdAndUpdate(req.user._id, { profilePicture: result.secure_url }, { new: true });
+
+  const doctor = await Doctor.findOne({ userId: req.user._id }).select("_id");
+  if (doctor) await invalidateDoctorCache(doctor._id);
 
   return res.status(StatusCodes.OK).json(new ApiResponse(200, { profilePicture: user.profilePicture }, "Profile picture updated."));
 });
@@ -480,6 +508,7 @@ module.exports = {
   listDoctors,
   searchDoctors,
   getDoctorById,
+  invalidateDoctorCache,
   getDoctorAvailability,
   getDoctorReviews,
   getDoctorQualifications,
