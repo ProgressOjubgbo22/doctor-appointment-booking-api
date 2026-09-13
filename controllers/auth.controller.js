@@ -95,7 +95,7 @@ const register = asyncHandler(async (req, res) => {
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  const user = await User.findOne({ email }).select("+password");
+  const user = await User.findOne({ email }).select("+password +twoFactorEnabled");
   if (!user) {
      await createAuditLog({ req, action: "login_failed", entityName: "User", description: `Login attempt for unknown email: ${email}` });
      throw new ApiError(401, "Invalid email or password.");
