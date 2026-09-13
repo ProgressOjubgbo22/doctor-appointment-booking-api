@@ -82,7 +82,7 @@ const listDoctors = asyncHandler(async (req, res) => {
     return { doctors: filtered, total, page: Number(page), pages: Math.ceil(total / limit) };
   });
 
-  return res.status(StatusCodes.OK).json(new ApiResponse(200, { doctors: filtered, total, page: Number(page), pages: Math.ceil(total / limit) }, "Doctors fetched."));
+  return res.status(StatusCodes.OK).json(new ApiResponse(200, responseData, "Doctors fetched."));
 });
 
 // GET /api/doctors/search

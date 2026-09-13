@@ -28,7 +28,7 @@ const appointmentPopulateOptions = [
   { path: "patientId", populate: { path: "userId", select: "firstName lastName profilePicture phoneNumber" } },
 ];
 
-const assertSlotIsBookable = async ({ doctorId, appointmentDate, startTime, endTime, excludeAppointmentId }) => {
+const assertSlotIsBookable = async ({ doctorId, appointmentDate, startTime, endTime, excludeAppointmentId, session }) => {
   const dayOfWeek = dayjs(appointmentDate).format("dddd").toLowerCase();
 
   const blocked = await UnavailableDate.findOne({ doctorId, date: appointmentDate });
