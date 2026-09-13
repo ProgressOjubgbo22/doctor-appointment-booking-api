@@ -1,4 +1,5 @@
 const ApiError = require("../utils/ApiError");
+const logger = require("../config/logger");
 
 // 404 handler for unmatched routes
 const notFound = (req, res, next) => {
@@ -41,8 +42,13 @@ const errorHandler = (err, req, res, next) => {
     message = "Token expired";
   }
 
-  if (process.env.NODE_ENV === "development") {
-    console.error(err);
+  // Log every 5xx as an error (unexpected/internal) and every 4xx at a
+  // quieter level (expected client-caused failures) so error.log stays
+  // focused on things that actually need attention.
+  if (statusCode >= 500) {
+    logger.error(err.message, { stack: err.stack, statusCode, path: req.originalUrl, method: req.method });
+  } else {
+    logger.debug(`Handled ${statusCode}: ${message}`, { path: req.originalUrl, method: req.method });
   }
 
   res.status(statusCode).json({

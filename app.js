@@ -4,6 +4,8 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const rateLimit = require("express-rate-limit");
+const passport = require("./config/passport");
+const logger = require("./config/logger");
 
 const apiRoutes = require("./routes/index");
 const { handleStripeWebhook } = require("./controllers/payment.controller");
@@ -30,7 +32,13 @@ app.post("/api/payments/webhook", express.raw({ type: "application/json" }), han
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(process.env.COOKIE_SECRET));
-app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
+// HTTP request logs are piped through winston (config/logger.js) so they
+// end up in the same log files/console pipeline as the rest of the app's
+// structured logs, instead of writing straight to stdout.
+app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev", { stream: logger.stream }));
+
+// Stateless OAuth handshake only (no cookie-session store) - see config/passport.js.
+app.use(passport.initialize());
 
 // Global rate limiter (per-route limiters are applied additionally on auth routes)
 const globalLimiter = rateLimit({

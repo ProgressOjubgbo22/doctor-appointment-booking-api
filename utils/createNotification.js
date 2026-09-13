@@ -1,4 +1,5 @@
 const Notification = require("../models/Notification");
+const logger = require("../config/logger");
 
 /**
  * Create an in-app notification for a user. Fails silently (logs only)
@@ -8,7 +9,7 @@ const createNotification = async ({ userId, title, message, type }) => {
   try {
     return await Notification.create({ userId, title, message, type });
   } catch (error) {
-    console.error("Notification creation failed:", error.message);
+    logger.error("Notification creation failed", { error: error.message });
     return null;
   }
 };

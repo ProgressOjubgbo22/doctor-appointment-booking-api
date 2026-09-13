@@ -1,4 +1,5 @@
 const nodemailer = require("nodemailer");
+const logger = require("../config/logger");
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
@@ -19,8 +20,13 @@ const sendEmail = async ({ to, subject, html }) => {
       html,
     });
   } catch (error) {
-    // Do not crash the request flow if email sending fails - just log it.
-    console.error("Email sending failed:", error.message);
+    // This function is invoked from workers/email.worker.js (the only
+    // remaining caller - everything else now goes through
+    // utils/queueEmail.js -> the "email-queue" BullMQ queue). Rethrowing
+    // here is what lets BullMQ's retry/backoff (see queues/queue.js) kick
+    // in on a transient SMTP failure instead of silently dropping the email.
+    logger.error("Email sending failed", { to, subject, error: error.message });
+    throw error;
   }
 };
 

@@ -13,7 +13,7 @@ const VerificationToken = require("../models/VerificationToken");
 const asyncHandler = require("../utils/asyncHandler");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
-const sendEmail = require("../utils/sendEmail");
+const sendEmail = require("../utils/queueEmail");
 const createAuditLog = require("../utils/createAuditLog");
 const { generateAccessToken, generateRefreshToken } = require("../utils/generateTokens");
 
