@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
-logger.info(`MongoDB connected: ${conn.connection.host}`);
-
+const logger = require("./logger");
 
 const connectDB = async () => {
   try {
