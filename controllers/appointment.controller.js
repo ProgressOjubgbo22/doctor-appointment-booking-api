@@ -14,6 +14,14 @@ const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const createNotification = require("../utils/createNotification");
 const createAuditLog = require("../utils/createAuditLog");
+const withTransaction = require("../utils/withTransaction");
+const { withLock } = require("../utils/lock");
+const logger = require("../config/logger");
+
+// Key used to serialize concurrent booking attempts for the exact same
+// doctor/date/time slot (see utils/lock.js). Kept alongside assertSlotIsBookable
+// since they always need to be used together.
+const slotLockKey = (doctorId, appointmentDate, startTime) => `lock:slot:${doctorId}:${appointmentDate}:${startTime}`;
 
 const appointmentPopulateOptions = [
   { path: "doctorId", populate: [{ path: "userId", select: "firstName lastName profilePicture" }, { path: "specialtyId", select: "name" }] },
@@ -72,27 +80,49 @@ const createAppointment = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Cannot book an appointment in the past.");
   }
 
-  await assertSlotIsBookable({ doctorId, appointmentDate, startTime, endTime });
+ // Concurrency handling: two patients hitting this endpoint for the same
+  // doctor/date/time at once must not both pass assertSlotIsBookable and
+  // both create an appointment. The Redis lock serializes them; the
+  // transaction makes the appointment + its payment record atomic; and the
+  // partial unique index on Appointment (see models/Appointment.js) is a
+  // final DB-level guard in case the lock is ever unavailable.
+  const { appointment, payment } = await withLock(slotLockKey(doctorId, appointmentDate, startTime), () =>
+    withTransaction(async (session) => {
+      await assertSlotIsBookable({ doctorId, appointmentDate, startTime, endTime, session });
+ 
+      const [createdAppointment] = await Appointment.create(
+        [
+          {
+            patientId: patient._id,
+            doctorId,
+            appointmentDate,
+            startTime,
+            endTime,
+            reasonForVisit,
+            status: "pending",
+            createdBy: "patient",
+          },
+        ],
+        { session }
+      );
+ 
+      const [createdPayment] = await Payment.create(
+        [
+          {
+            appointmentId: createdAppointment._id,
+            patientId: patient._id,
+            doctorId,
+            amount: doctor.consultationFee,
+            paymentMethod: paymentMethod || "cash",
+            paymentStatus: paymentMethod === "cash" ? "pending" : "pending",
+          },
+        ],
+        { session }
+      );
 
-  const appointment = await Appointment.create({
-    patientId: patient._id,
-    doctorId,
-    appointmentDate,
-    startTime,
-    endTime,
-    reasonForVisit,
-    status: "pending",
-    createdBy: "patient",
-  });
-
-  const payment = await Payment.create({
-    appointmentId: appointment._id,
-    patientId: patient._id,
-    doctorId,
-    amount: doctor.consultationFee,
-    paymentMethod: paymentMethod || "cash",
-    paymentStatus: paymentMethod === "cash" ? "pending" : "pending",
-  });
+        return { appointment: createdAppointment, payment: createdPayment };
+    })
+  );
 
   await createNotification({
     userId: doctor.userId,
@@ -180,19 +210,24 @@ const rescheduleAppointment = asyncHandler(async (req, res) => {
     throw new ApiError(400, `Cannot reschedule an appointment with status "${appointment.status}".`);
   }
 
-  await assertSlotIsBookable({
-    doctorId: appointment.doctorId,
-    appointmentDate,
-    startTime,
-    endTime,
-    excludeAppointmentId: appointment._id,
-  });
-
-  appointment.appointmentDate = appointmentDate;
-  appointment.startTime = startTime;
-  appointment.endTime = endTime;
-  appointment.status = "rescheduled";
-  await appointment.save();
+  await withLock(slotLockKey(appointment.doctorId, appointmentDate, startTime), () =>
+    withTransaction(async (session) => {
+      await assertSlotIsBookable({
+        doctorId: appointment.doctorId,
+        appointmentDate,
+        startTime,
+        endTime,
+        excludeAppointmentId: appointment._id,
+        session,
+      });
+  
+      appointment.appointmentDate = appointmentDate;
+      appointment.startTime = startTime;
+      appointment.endTime = endTime;
+      appointment.status = "rescheduled";
+      await appointment.save({ session });
+    })
+  );
 
   await createAuditLog({
       req,
@@ -236,20 +271,26 @@ const cancelAppointment = asyncHandler(async (req, res) => {
     throw new ApiError(400, `Cannot cancel an appointment with status "${appointment.status}".`);
   }
 
-  appointment.status = "cancelled";
-  appointment.cancelReason = cancelReason;
-  await appointment.save();
-
-  const payment = await Payment.findOne({ appointmentId: appointment._id });
-  if (payment && payment.paymentStatus === "paid") {
-    payment.paymentStatus = "refunded";
-    payment.refundAmount = payment.amount;
-    payment.refundReason = "Appointment cancelled";
-    await payment.save();
-  } else if (payment) {
-    payment.paymentStatus = "cancelled";
-    await payment.save();
-  }
+  // Appointment status + its linked payment record must move together -
+  // wrap in a transaction so a crash between the two saves can't leave a
+  // cancelled appointment with a stale "paid"/"pending" payment record.
+  const payment = await withTransaction(async (session) => {
+    appointment.status = "cancelled";
+    appointment.cancelReason = cancelReason;
+    await appointment.save({ session });
+  
+    const linkedPayment = await Payment.findOne({ appointmentId: appointment._id }).session(session || null);
+    if (linkedPayment && linkedPayment.paymentStatus === "paid") {
+      linkedPayment.paymentStatus = "refunded";
+      linkedPayment.refundAmount = linkedPayment.amount;
+      linkedPayment.refundReason = "Appointment cancelled";
+      await linkedPayment.save({ session });
+    } else if (linkedPayment) {
+      linkedPayment.paymentStatus = "cancelled";
+      await linkedPayment.save({ session });
+    }
+    return linkedPayment;
+  });
 
     await createAuditLog({
       req,
@@ -496,31 +537,49 @@ const createFollowUpAppointment = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Cannot book an appointment in the past.");
   }
 
-  await assertSlotIsBookable({ doctorId: parentAppointment.doctorId, appointmentDate, startTime, endTime });
-
   const doctor = await Doctor.findById(parentAppointment.doctorId);
 
-  const followUp = await Appointment.create({
-    patientId: parentAppointment.patientId,
-    doctorId: parentAppointment.doctorId,
-    appointmentDate,
-    startTime,
-    endTime,
-    reasonForVisit: reasonForVisit || "Follow-up appointment",
-    status: bookedByRole === "doctor" ? "confirmed" : "pending",
-    createdBy: bookedByRole,
-    isFollowUp: true,
-    parentAppointmentId: parentAppointment._id,
-  });
-
-  const payment = await Payment.create({
-    appointmentId: followUp._id,
-    patientId: parentAppointment.patientId,
-    doctorId: parentAppointment.doctorId,
-    amount: doctor.consultationFee,
-    paymentMethod: paymentMethod || "cash",
-    paymentStatus: "pending",
-  });
+  const { followUp, payment } = await withLock(
+    slotLockKey(parentAppointment.doctorId, appointmentDate, startTime),
+    () =>
+      withTransaction(async (session) => {
+        await assertSlotIsBookable({ doctorId: parentAppointment.doctorId, appointmentDate, startTime, endTime, session });
+  
+        const [createdFollowUp] = await Appointment.create(
+          [
+            {
+              patientId: parentAppointment.patientId,
+              doctorId: parentAppointment.doctorId,
+              appointmentDate,
+              startTime,
+              endTime,
+              reasonForVisit: reasonForVisit || "Follow-up appointment",
+              status: bookedByRole === "doctor" ? "confirmed" : "pending",
+              createdBy: bookedByRole,
+              isFollowUp: true,
+              parentAppointmentId: parentAppointment._id,
+            },
+          ],
+          { session }
+        );
+  
+        const [createdPayment] = await Payment.create(
+          [
+            {
+              appointmentId: createdFollowUp._id,
+              patientId: parentAppointment.patientId,
+              doctorId: parentAppointment.doctorId,
+              amount: doctor.consultationFee,
+              paymentMethod: paymentMethod || "cash",
+              paymentStatus: "pending",
+            },
+          ],
+          { session }
+        );
+  
+        return { followUp: createdFollowUp, payment: createdPayment };
+      })
+  );
 
   const patient = await Patient.findById(parentAppointment.patientId);
   const notifyMessage = `A follow-up appointment has been ${bookedByRole === "doctor" ? "scheduled" : "requested"} for ${appointmentDate} at ${startTime}.`;

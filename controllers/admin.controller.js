@@ -18,10 +18,11 @@ const MedicalRecord = require("../models/MedicalRecord");
 const asyncHandler = require("../utils/asyncHandler");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
-const sendEmail = require("../utils/sendEmail");
+const sendEmail = require("../utils/queueEmail");
 const createNotification = require("../utils/createNotification");
 const createAuditLog = require("../utils/createAuditLog");
 const { assertSlotIsBookable } = require("./appointment.controller");
+const { invalidateDoctorCache } = require("./doctor.controller");
 
 // GET /api/admin/dashboard
 const getDashboard = asyncHandler(async (req, res) => {
@@ -262,6 +263,7 @@ const updateDoctorAdmin = asyncHandler(async (req, res) => {
   await doctor.save();
 
   await createAuditLog({ req, action: "update", entityName: "Doctor", entityId: doctor._id, description: "Admin edited doctor information." });
+  await invalidateDoctorCache(doctor._id);
 
   return res.status(StatusCodes.OK).json(new ApiResponse(200, doctor, "Doctor information updated."));
 });
@@ -271,6 +273,7 @@ const approveDoctor = asyncHandler(async (req, res) => {
   if (!doctor) throw new ApiError(404, "Doctor not found.");
 
   await createAuditLog({ req, action: "approve", entityName: "Doctor", entityId: doctor._id, description: "Admin approved doctor registration." });
+  await invalidateDoctorCache(doctor._id);
   await createNotification({ userId: doctor.userId, title: "Registration approved", message: "Your registration has been approved. You can now accept appointments.", type: "account" });
   await sendEmail({ to: (await User.findById(doctor.userId)).email, subject: "Your registration has been approved", html: "<p>Congratulations! Your doctor account has been verified and approved.</p>" });
 
@@ -286,6 +289,7 @@ const verifyDoctor = asyncHandler(async (req, res) => {
   if (!doctor) throw new ApiError(404, "Doctor not found.");
 
   await createAuditLog({ req, action: "verify", entityName: "Doctor", entityId: doctor._id, description: "Admin reviewed doctor license/qualifications." });
+  await invalidateDoctorCache(doctor._id);
   await createNotification({ userId: doctor.userId, title: "Verification updated", message: `Your verification status is now: ${doctor.verificationStatus}.`, type: "account" });
 
   return res.status(StatusCodes.OK).json(new ApiResponse(200, doctor, "Doctor verification updated."));
@@ -300,6 +304,7 @@ const suspendDoctor = asyncHandler(async (req, res) => {
 
   await createAuditLog({ req, action: "suspend", entityName: "Doctor", entityId: doctor._id, description: req.body.reason });
   await createNotification({ userId: doctor.userId, title: "Account suspended", message: `Your account was suspended. Reason: ${req.body.reason}`, type: "account" });
+  await invalidateDoctorCache(doctor._id);
 
   return res.status(StatusCodes.OK).json(new ApiResponse(200, doctor, "Doctor suspended."));
 });
@@ -311,6 +316,7 @@ const activateDoctor = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(doctor.userId, { accountStatus: "active", suspensionReason: "" });
 
   await createAuditLog({ req, action: "activate", entityName: "Doctor", entityId: doctor._id, description: "Admin reactivated doctor account." });
+  await invalidateDoctorCache(doctor._id);
   await createNotification({ userId: doctor.userId, title: "Account reactivated", message: "Your account has been reactivated.", type: "account" });
 
   return res.status(StatusCodes.OK).json(new ApiResponse(200, doctor, "Doctor activated."));
@@ -331,6 +337,7 @@ const deleteDoctor = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(doctor.userId, { accountStatus: "inactive" });
 
   await createAuditLog({ req, action: "delete", entityName: "Doctor", entityId: doctor._id, description: "Admin deleted/deactivated doctor listing." });
+  await invalidateDoctorCache(doctor._id);
 
   return res.status(StatusCodes.OK).json(new ApiResponse(200, null, "Doctor removed from active listings."));
 });

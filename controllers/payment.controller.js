@@ -12,6 +12,15 @@ const createNotification = require("../utils/createNotification");
 const createAuditLog = require("../utils/createAuditLog");
 const stripe = require("../config/stripe");
 const { streamPdfToResponse, buildInvoicePdf } = require("../utils/generatePdf");
+const withTransaction = require("../utils/withTransaction");
+const withRetry = require("../utils/withRetry");
+const logger = require("../config/logger");
+
+// Stripe's SDK already retries idempotent GETs internally, but checkout
+// session creation is a POST - wrap it so a transient network blip doesn't
+// surface as a hard failure to the patient trying to pay.
+const isRetryableStripeError = (error) =>
+  ["StripeConnectionError", "StripeAPIError", "StripeRateLimitError"].includes(error.type);
 
 const populateOpts = [
   { path: "appointmentId", select: "appointmentDate startTime status" },
@@ -46,24 +55,28 @@ const createPayment = asyncHandler(async (req, res) => {
     return res.status(StatusCodes.OK).json(new ApiResponse(200, payment, "Cash payment will be collected at the hospital."));
   }
 
-  // Card / online payment via Stripe Checkout
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ["card"],
-    mode: "payment",
-    line_items: [
-      {
-        price_data: {
-          currency: "usd",
-          product_data: { name: "Consultation fee" },
-          unit_amount: Math.round(payment.amount * 100),
-        },
-        quantity: 1,
-      },
-    ],
-    success_url: `${process.env.CLIENT_URL}/payments/success?appointmentId=${appointmentId}`,
-    cancel_url: `${process.env.CLIENT_URL}/payments/cancel?appointmentId=${appointmentId}`,
-    metadata: { paymentId: String(payment._id), appointmentId: String(appointmentId) },
-  });
+  // Card / online payment via Stripe Checkout (retried on transient Stripe/network errors)
+  const session = await withRetry(
+    () =>
+      stripe.checkout.sessions.create({
+        payment_method_types: ["card"],
+        mode: "payment",
+        line_items: [
+          {
+            price_data: {
+              currency: "usd",
+              product_data: { name: "Consultation fee" },
+              unit_amount: Math.round(payment.amount * 100),
+            },
+            quantity: 1,
+          },
+        ],
+        success_url: `${process.env.CLIENT_URL}/payments/success?appointmentId=${appointmentId}`,
+        cancel_url: `${process.env.CLIENT_URL}/payments/cancel?appointmentId=${appointmentId}`,
+        metadata: { paymentId: String(payment._id), appointmentId: String(appointmentId) },
+      }),
+    { retries: 2, baseDelayMs: 400, shouldRetry: isRetryableStripeError, label: "Stripe checkout session creation" }
+  );
 
   payment.paymentIntentId = session.id;
   await payment.save();
@@ -157,12 +170,17 @@ const refundPayment = asyncHandler(async (req, res) => {
     try {
       const session = await stripe.checkout.sessions.retrieve(payment.paymentIntentId);
       if (session.payment_intent) {
-        await stripe.refunds.create({
-          payment_intent: session.payment_intent,
-          amount: Math.round(amountToRefund * 100),
-        });
+        await withRetry(
+          () =>
+            stripe.refunds.create({
+              payment_intent: session.payment_intent,
+              amount: Math.round(amountToRefund * 100),
+            }),
+          { retries: 2, baseDelayMs: 400, shouldRetry: isRetryableStripeError, label: "Stripe refund creation" }
+        );
       }
     } catch (err) {
+      logger.error("Refund failed at payment gateway", { paymentId, error: err.message });
       throw new ApiError(500, "Refund failed at payment gateway. Please try again or contact support.");
     }
   }
@@ -229,17 +247,22 @@ const getInvoice = asyncHandler(async (req, res) => {
  * notifies the patient and writes an audit log entry.
  */
 const markPaymentPaidFromWebhook = async (payment, eventType) => {
-  if (payment.paymentStatus === "paid") return; // already processed - avoid duplicate side effects
+  if (payment.paymentStatus === "paid") return; // idempotent - already processed, avoid duplicate side effects
+                                                // (Stripe may deliver the same webhook event more than once)
 
-  payment.paymentStatus = "paid";
-  payment.paidAt = new Date();
-  await payment.save();
-
-  const appointment = await Appointment.findById(payment.appointmentId);
-  if (appointment && appointment.status === "pending") {
-    appointment.status = "confirmed";
-    await appointment.save();
-  }
+   // Payment + its appointment's status move together atomically, so a crash
+  // mid-webhook can't leave a "paid" payment linked to a still-"pending" appointment.
+  await withTransaction(async (session) => {
+    payment.paymentStatus = "paid";
+    payment.paidAt = new Date();
+    await payment.save({ session });
+  
+    const appointment = await Appointment.findById(payment.appointmentId).session(session || null);
+    if (appointment && appointment.status === "pending") {
+      appointment.status = "confirmed";
+      await appointment.save({ session });
+    }
+  });
 
   const patient = await Patient.findById(payment.patientId);
   if (patient) {
@@ -313,7 +336,7 @@ const handleStripeWebhook = asyncHandler(async (req, res) => {
   try {
     event = stripe.webhooks.constructEvent(req.body, signature, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
-    console.error("Stripe webhook signature verification failed:", err.message);
+    logger.error("Stripe webhook signature verification failed", { error: err.message });
     return res.status(StatusCodes.BAD_REQUEST).send(`Webhook Error: ${err.message}`);
   }
 

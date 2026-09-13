@@ -4,6 +4,7 @@ const appointmentController = require("../controllers/appointment.controller");
 const verifyJWT = require("../middleware/auth.middleware");
 const authorizeRoles = require("../middleware/role.middleware");
 const validate = require("../middleware/validate.middleware");
+const idempotency = require("../middleware/idempotency.middleware");
 
 const {
   createAppointmentSchema, rescheduleAppointmentSchema, cancelAppointmentSchema, rejectAppointmentSchema, createFollowUpSchema,
@@ -13,7 +14,10 @@ const router = express.Router();
 
 router.use(verifyJWT);
 
-router.post("/", authorizeRoles("patient"), validate(createAppointmentSchema), appointmentController.createAppointment);
+// Idempotency-Key support: a client retry (timeout/double submit) with the
+// same key returns the original booking response instead of creating a
+// duplicate appointment.
+router.post("/", authorizeRoles("patient"), idempotency(), validate(createAppointmentSchema), appointmentController.createAppointment);
 router.get("/", authorizeRoles("patient", "doctor", "admin"), appointmentController.getAppointments);
 router.get("/:id", authorizeRoles("patient", "doctor", "admin"), appointmentController.getAppointmentById);
 
@@ -26,7 +30,7 @@ router.patch("/:id/check-in", authorizeRoles("doctor", "admin"), appointmentCont
 router.patch("/:id/complete", authorizeRoles("doctor"), appointmentController.completeAppointment);
 router.patch("/:id/no-show", authorizeRoles("doctor"), appointmentController.markNoShow);
 
-router.post("/:id/follow-up", authorizeRoles("patient", "doctor"), validate(createFollowUpSchema), appointmentController.createFollowUpAppointment);
+router.post("/:id/follow-up", authorizeRoles("patient", "doctor"), idempotency(), validate(createFollowUpSchema), appointmentController.createFollowUpAppointment);
 router.get("/:id/follow-ups", authorizeRoles("patient", "doctor", "admin"), appointmentController.getFollowUps);
 
 module.exports = router;
