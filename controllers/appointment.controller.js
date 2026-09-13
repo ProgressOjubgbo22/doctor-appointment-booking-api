@@ -31,10 +31,10 @@ const appointmentPopulateOptions = [
 const assertSlotIsBookable = async ({ doctorId, appointmentDate, startTime, endTime, excludeAppointmentId, session }) => {
   const dayOfWeek = dayjs(appointmentDate).format("dddd").toLowerCase();
 
-  const blocked = await UnavailableDate.findOne({ doctorId, date: appointmentDate });
+  const blocked = await UnavailableDate.findOne({ doctorId, date: appointmentDate }).session(session || null);;
   if (blocked) throw new ApiError(400, "Doctor is not available on the selected date.");
 
-  const availability = await Availability.findOne({ doctorId, dayOfWeek, isAvailable: true });
+  const availability = await Availability.findOne({ doctorId, dayOfWeek, isAvailable: true }).session(session || null);;
   if (!availability) throw new ApiError(400, "Doctor does not work on the selected day.");
 
   if (startTime < availability.startTime || endTime > availability.endTime) {
@@ -57,7 +57,7 @@ const assertSlotIsBookable = async ({ doctorId, appointmentDate, startTime, endT
   };
   if (excludeAppointmentId) conflictFilter._id = { $ne: excludeAppointmentId };
 
-  const conflict = await Appointment.findOne(conflictFilter);
+  const conflict = await Appointment.findOne(conflictFilter).session(session || null);;
   if (conflict) throw new ApiError(409, "This time slot has just been booked. Please choose another.");
 };
 
